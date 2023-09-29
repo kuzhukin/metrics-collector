@@ -53,9 +53,14 @@ func (r *reporterImpl) reportCounter(counterMetrics map[string]int64) {
 
 func doReport(request string) error {
 	body := bytes.NewBufferString("")
-	_, err := http.Post(request, "text/plain", body)
+	resp, err := http.Post(request, "text/plain", body)
+	if err != nil {
+		return err
+	}
 
-	return err
+	resp.Body.Close()
+
+	return nil
 }
 
 func makeUpdateRequest(hostport string, kind metric.Kind, name string, value string) string {
