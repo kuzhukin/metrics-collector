@@ -1,8 +1,6 @@
 package memorystorage
 
-import (
-	"github.com/kuzhukin/metrics-collector/cmd/server/storage"
-)
+import "github.com/kuzhukin/metrics-collector/internal/storage"
 
 type memoryStorage struct {
 	gaugeMetrics   syncMemoryStorage[float64]

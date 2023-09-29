@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/kuzhukin/metrics-collector/cmd/server/metric"
 	"github.com/kuzhukin/metrics-collector/cmd/server/parser"
-	"github.com/kuzhukin/metrics-collector/cmd/server/shared"
-	"github.com/kuzhukin/metrics-collector/cmd/server/storage"
+	"github.com/kuzhukin/metrics-collector/internal/metric"
+	"github.com/kuzhukin/metrics-collector/internal/shared"
+	"github.com/kuzhukin/metrics-collector/internal/storage"
 )
 
 var _ http.Handler = &UpdateHandler{}

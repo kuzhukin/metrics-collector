@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/kuzhukin/metrics-collector/cmd/server/metric"
-	"github.com/kuzhukin/metrics-collector/cmd/server/shared"
+	"github.com/kuzhukin/metrics-collector/internal/metric"
+	"github.com/kuzhukin/metrics-collector/internal/shared"
 )
 
 const (
