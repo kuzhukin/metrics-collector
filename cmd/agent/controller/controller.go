@@ -21,15 +21,17 @@ type Controller struct {
 	done chan struct{}
 }
 
-func Start(reporter reporter.Reporter) {
-	ctrl := &Controller{
+func New(reporter reporter.Reporter) *Controller {
+	return &Controller{
 		gaugeMetrics:   make(map[string]float64),
 		counterMetrics: make(map[string]int64),
 		reporter:       reporter,
 		done:           make(chan struct{}),
 	}
+}
 
-	ctrl.loop()
+func (c *Controller) Start() {
+	c.loop()
 }
 
 func (c *Controller) Stop() {
@@ -52,7 +54,7 @@ func (c *Controller) loop() {
 		case <-reportTicker.C:
 			c.reporter.Report(c.gaugeMetrics, c.counterMetrics)
 		case <-c.done:
-			fmt.Printf("Controller stopped'n")
+			fmt.Printf("Controller stopped\n")
 
 			return
 		}

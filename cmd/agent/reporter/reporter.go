@@ -10,6 +10,7 @@ import (
 	"github.com/kuzhukin/metrics-collector/internal/shared"
 )
 
+//go:generate mockgen -source=reporter.go -destination=mockreporter/mock.go -package=mockreporter
 type Reporter interface {
 	Report(gaugeMetrics map[string]float64, counterMetrics map[string]int64)
 }
@@ -31,7 +32,7 @@ func (r *reporterImpl) Report(gaugeMetrics map[string]float64, counterMetrics ma
 
 func (r *reporterImpl) reportGauge(gaugeMetrics map[string]float64) {
 	for name, value := range gaugeMetrics {
-		encodedValue := strconv.FormatFloat(value, 'f', 4, 64)
+		encodedValue := strconv.FormatFloat(value, 'G', -1, 64)
 		request := makeUpdateRequest(r.hostport, metric.Gauge, name, encodedValue)
 
 		if err := doReport(request); err != nil {
@@ -58,7 +59,11 @@ func doReport(request string) error {
 		return err
 	}
 
-	resp.Body.Close()
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		fmt.Printf("request=%s was failed with statusCode=%d\n", request, resp.StatusCode)
+	}
 
 	return nil
 }

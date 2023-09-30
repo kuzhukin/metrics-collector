@@ -9,5 +9,5 @@ const hostport = "http://localhost:8080"
 
 func main() {
 	reporter := reporter.New(hostport)
-	controller.Start(reporter)
+	controller.New(reporter).Start()
 }

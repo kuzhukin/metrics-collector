@@ -1,7 +1,7 @@
 ALL_TARGETS = agent server
 
 define build
-	go build -v ./cmd/$(1)
+	go build -o ./cmd/$(1)/ -v ./cmd/$(1)/ 
 endef
 
 all: build
