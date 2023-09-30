@@ -13,11 +13,9 @@ type syncMemoryStorage[T int64 | float64] struct {
 	storage map[string]T
 }
 
-type syncMemoryStorageUpdater[T int64 | float64] func(storage map[string]T)
-
-func (s *syncMemoryStorage[T]) Update(fn syncMemoryStorageUpdater[T]) {
+func (s *syncMemoryStorage[T]) Update(k string, value T) {
 	s.Lock()
 	defer s.Unlock()
 
-	fn(s.storage)
+	s.storage[k] = value
 }

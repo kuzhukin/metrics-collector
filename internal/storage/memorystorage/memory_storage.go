@@ -31,17 +31,13 @@ func (s *memoryStorage) Update(m *metric.Metric) error {
 }
 
 func (s *memoryStorage) updateGauge(name string, value float64) error {
-	s.gaugeMetrics.Update(func(storage map[string]float64) {
-		storage[name] = value
-	})
+	s.gaugeMetrics.Update(name, value)
 
 	return nil
 }
 
 func (s *memoryStorage) updateCounter(name string, value int64) error {
-	s.counterMetrics.Update(func(storage map[string]int64) {
-		storage[name] = value
-	})
+	s.counterMetrics.Update(name, value)
 
 	return nil
 }
