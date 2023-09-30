@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const fakeUrlPath = "/"
+const fakeURLPath = "/"
 
 var fakeMetric = &metric.Metric{
 	Name:  "fake-metric",
@@ -47,10 +47,10 @@ func TestSuccessUpload(t *testing.T) {
 
 	handler := NewUpdateHandler(mockStorage, mockParser)
 
-	r := httptest.NewRequest(http.MethodPost, fakeUrlPath, nil)
+	r := httptest.NewRequest(http.MethodPost, fakeURLPath, nil)
 	w := httptest.NewRecorder()
 
-	mockParser.EXPECT().Parse(fakeUrlPath).Return(fakeMetric, nil)
+	mockParser.EXPECT().Parse(fakeURLPath).Return(fakeMetric, nil)
 	mockStorage.EXPECT().Update(fakeMetric).Return(nil)
 
 	handler.ServeHTTP(w, r)
@@ -97,10 +97,10 @@ func TestParserErrorToStatusCodes(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			r := httptest.NewRequest(http.MethodPost, fakeUrlPath, nil)
+			r := httptest.NewRequest(http.MethodPost, fakeURLPath, nil)
 			w := httptest.NewRecorder()
 
-			mockParser.EXPECT().Parse(fakeUrlPath).Return(nil, test.parserError)
+			mockParser.EXPECT().Parse(fakeURLPath).Return(nil, test.parserError)
 			handler.ServeHTTP(w, r)
 			require.Equal(t, test.expectedCode, w.Code)
 		})
@@ -116,10 +116,10 @@ func TestStorageErrorToStatusCodes(t *testing.T) {
 
 	handler := NewUpdateHandler(mockStorage, mockParser)
 
-	r := httptest.NewRequest(http.MethodPost, fakeUrlPath, nil)
+	r := httptest.NewRequest(http.MethodPost, fakeURLPath, nil)
 	w := httptest.NewRecorder()
 
-	mockParser.EXPECT().Parse(fakeUrlPath).Return(fakeMetric, nil)
+	mockParser.EXPECT().Parse(fakeURLPath).Return(fakeMetric, nil)
 	mockStorage.EXPECT().Update(fakeMetric).Return(errors.New("update error"))
 	handler.ServeHTTP(w, r)
 	require.Equal(t, http.StatusInternalServerError, w.Code)
