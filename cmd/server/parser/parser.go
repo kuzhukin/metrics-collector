@@ -20,6 +20,7 @@ var ErrMetricNameIsNotFound error = errors.New("metric name isn't found")
 var ErrBadMetricValue error = errors.New("bad metric value")
 var ErrBadMetricKind error = errors.New("bad metric kind")
 
+//go:generate mockgen -source=parser.go -destination=mockparser/mock.go -package=mockparser
 type RequestParser interface {
 	Parse(request string) (*metric.Metric, error)
 }
