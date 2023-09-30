@@ -12,9 +12,5 @@ const (
 type Metric struct {
 	Kind  Kind
 	Name  string
-	Value string
-}
-
-func (m *Metric) IsValid() bool {
-	return m.Kind == Gauge || m.Kind == Counter
+	Value Value
 }

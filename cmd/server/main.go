@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/kuzhukin/metrics-collector/cmd/server/handler"
+	"github.com/kuzhukin/metrics-collector/cmd/server/parser"
 	"github.com/kuzhukin/metrics-collector/internal/shared"
 	"github.com/kuzhukin/metrics-collector/internal/storage/memorystorage"
 )
@@ -22,5 +23,6 @@ func main() {
 
 func registerHandlers(mux *http.ServeMux) {
 	storage := memorystorage.New()
-	mux.Handle(shared.UpdateEndpoint, handler.NewUpdateHandler(storage))
+	parser := parser.NewRequestParser()
+	mux.Handle(shared.UpdateEndpoint, handler.NewUpdateHandler(storage, parser))
 }

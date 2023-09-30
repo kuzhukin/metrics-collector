@@ -15,11 +15,13 @@ var _ http.Handler = &UpdateHandler{}
 
 type UpdateHandler struct {
 	storage storage.Storage
+	parser  parser.RequestParser
 }
 
-func NewUpdateHandler(storage storage.Storage) *UpdateHandler {
+func NewUpdateHandler(storage storage.Storage, parser parser.RequestParser) *UpdateHandler {
 	return &UpdateHandler{
 		storage: storage,
+		parser:  parser,
 	}
 }
 
@@ -31,40 +33,30 @@ func (u *UpdateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	metric, err := parser.ParseRequest(r.URL.Path)
+	metric, err := u.parser.Parse(r.URL.Path)
 	if err != nil {
 		if errors.Is(err, parser.ErrMetricNameIsNotFound) {
 			fmt.Printf("Metric name isn't found path=%s, err=%s\n", r.URL.Path, err)
 			w.WriteHeader(http.StatusNotFound)
-
-			return
-		} else {
-			fmt.Printf("Parse request error=%s\n", err)
+		} else if errors.Is(err, parser.ErrBadMetricValue) {
+			fmt.Printf("Bad metric value path=%s, err=%s\n", r.URL.Path, err)
 			w.WriteHeader(http.StatusBadRequest)
-
-			return
+		} else if errors.Is(err, parser.ErrBadMetricKind) {
+			fmt.Printf("Bad metric kind path=%s, err=%s\n", r.URL.Path, err)
+			w.WriteHeader(http.StatusBadRequest)
+		} else {
+			fmt.Printf("Parse request path=%s, err=%s\n", r.URL.Path, err)
+			w.WriteHeader(http.StatusBadRequest)
 		}
-	}
-
-	if !metric.IsValid() {
-		fmt.Printf("Bad metric=%v\n", metric)
-		w.WriteHeader(http.StatusBadRequest)
 
 		return
 	}
 
 	if err := u.updateMetric(metric); err != nil {
-		if errors.Is(err, parser.ErrBadMetricValue) {
-			fmt.Printf("Bad value of metric=%v\n", metric)
-			w.WriteHeader(http.StatusBadRequest)
+		fmt.Printf("Metrics=%v updating err=%s\n", metric, err)
+		w.WriteHeader(http.StatusInternalServerError)
 
-			return
-		} else {
-			fmt.Printf("Metrics=%v updating err=%s\n", metric, err)
-			w.WriteHeader(http.StatusInternalServerError)
-
-			return
-		}
+		return
 	}
 
 	w.Header().Set("Content-Type", "text/plain")
@@ -74,20 +66,15 @@ func (u *UpdateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (u *UpdateHandler) updateMetric(m *metric.Metric) error {
 	switch m.Kind {
 	case metric.Gauge:
-		return u.updateGauge(m.Name, m.Value)
+		return u.updateGauge(m.Name, m.Value.Gauge())
 	case metric.Counter:
-		return u.updateCounter(m.Name, m.Value)
+		return u.updateCounter(m.Name, m.Value.Counter())
 	default:
-		return fmt.Errorf("unknown metric kind=%s", m.Kind)
+		return fmt.Errorf("doesn't have update handle func for kind=%s", m.Kind)
 	}
 }
 
-func (u *UpdateHandler) updateGauge(name string, valueStr string) error {
-	value, err := parser.ParseGaugeValue(valueStr)
-	if err != nil {
-		return fmt.Errorf("parse gauge value=%s, err=%w", valueStr, err)
-	}
-
+func (u *UpdateHandler) updateGauge(name string, value float64) error {
 	if err := u.storage.UpdateGauge(name, value); err != nil {
 		return fmt.Errorf("update gauge name=%s value=%v, err=%w", name, value, err)
 	}
@@ -95,12 +82,7 @@ func (u *UpdateHandler) updateGauge(name string, valueStr string) error {
 	return nil
 }
 
-func (u *UpdateHandler) updateCounter(name string, valueStr string) error {
-	value, err := parser.ParseCounterValue(valueStr)
-	if err != nil {
-		return fmt.Errorf("parse counter value=%s, err=%w", valueStr, err)
-	}
-
+func (u *UpdateHandler) updateCounter(name string, value int64) error {
 	if err := u.storage.UpdateCounter(name, value); err != nil {
 		return fmt.Errorf("update counter name=%s value=%v, err=%w", name, value, err)
 	}
