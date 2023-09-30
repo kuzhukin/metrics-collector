@@ -16,6 +16,12 @@ import (
 
 const fakeUrlPath = "/"
 
+var fakeMetric = &metric.Metric{
+	Name:  "fake-metric",
+	Kind:  metric.Gauge,
+	Value: metric.GaugeValue(3.14),
+}
+
 func TestBadMethod(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -44,10 +50,8 @@ func TestSuccessUpload(t *testing.T) {
 	r := httptest.NewRequest(http.MethodPost, fakeUrlPath, nil)
 	w := httptest.NewRecorder()
 
-	metric := &metric.Metric{}
-
-	mockParser.EXPECT().Parse(fakeUrlPath).Return(metric, nil)
-	mockStorage.EXPECT().Update(metric).Return(nil)
+	mockParser.EXPECT().Parse(fakeUrlPath).Return(fakeMetric, nil)
+	mockStorage.EXPECT().Update(fakeMetric).Return(nil)
 
 	handler.ServeHTTP(w, r)
 
@@ -115,10 +119,8 @@ func TestStorageErrorToStatusCodes(t *testing.T) {
 	r := httptest.NewRequest(http.MethodPost, fakeUrlPath, nil)
 	w := httptest.NewRecorder()
 
-	metric := &metric.Metric{}
-
-	mockParser.EXPECT().Parse(fakeUrlPath).Return(metric, nil)
-	mockStorage.EXPECT().Update(metric).Return(errors.New("update error"))
+	mockParser.EXPECT().Parse(fakeUrlPath).Return(fakeMetric, nil)
+	mockStorage.EXPECT().Update(fakeMetric).Return(errors.New("update error"))
 	handler.ServeHTTP(w, r)
 	require.Equal(t, http.StatusInternalServerError, w.Code)
 }

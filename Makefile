@@ -18,7 +18,7 @@ build-%:
 .PHONY: test
 test:
 	@echo === Tests
-	go test ./...
+	go test -count 1 -v ./...
 
 clean:
 	rm server && \
@@ -32,3 +32,6 @@ lint:
 	@echo === Lint
 	$(LINTER) --version
 	$(LINTER) cache clean && $(LINTER) run
+
+genmock:
+	go generate ./...
