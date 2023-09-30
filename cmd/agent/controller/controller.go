@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"math/rand"
 	"runtime"
 	"time"
@@ -15,9 +16,9 @@ type Controller struct {
 	gaugeMetrics   map[string]float64
 	counterMetrics map[string]int64
 
-	lastReportTime int64
-
 	reporter reporter.Reporter
+
+	done chan struct{}
 }
 
 func Start(reporter reporter.Reporter) {
@@ -25,31 +26,42 @@ func Start(reporter reporter.Reporter) {
 		gaugeMetrics:   make(map[string]float64),
 		counterMetrics: make(map[string]int64),
 		reporter:       reporter,
+		done:           make(chan struct{}),
 	}
 
 	ctrl.loop()
 }
 
+func (c *Controller) Stop() {
+	close(c.done)
+}
+
 func (c *Controller) loop() {
+	fmt.Printf("Controller started\n")
+
+	pollingTicker := time.NewTicker(time.Second * pollIntervalSec)
+	defer pollingTicker.Stop()
+
+	reportTicker := time.NewTicker(time.Second * reportInterval)
+	defer reportTicker.Stop()
+
 	for {
-		c.collectMetrics()
-
-		if c.needReport() {
+		select {
+		case <-pollingTicker.C:
+			c.collectMetrics()
+		case <-reportTicker.C:
 			c.reporter.Report(c.gaugeMetrics, c.counterMetrics)
-		}
+		case <-c.done:
+			fmt.Printf("Controller stopped'n")
 
-		time.Sleep(time.Second * pollIntervalSec)
+			return
+		}
 	}
 }
 
 func (c *Controller) collectMetrics() {
 	c.collectGauge()
 	c.collectCounter()
-}
-
-func (c *Controller) needReport() bool {
-	now := time.Now().Unix()
-	return (now - c.lastReportTime) >= reportInterval
 }
 
 func (c *Controller) collectGauge() {
