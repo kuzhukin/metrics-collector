@@ -19,12 +19,12 @@ func New() storage.Storage {
 	}
 }
 
-func (u *memoryStorage) Update(m *metric.Metric) error {
+func (s *memoryStorage) Update(m *metric.Metric) error {
 	switch m.Kind {
 	case metric.Gauge:
-		return u.updateGauge(m.Name, m.Value.Gauge())
+		return s.updateGauge(m.Name, m.Value.Gauge())
 	case metric.Counter:
-		return u.updateCounter(m.Name, m.Value.Counter())
+		return s.updateCounter(m.Name, m.Value.Counter())
 	default:
 		return fmt.Errorf("doesn't have update handle func for kind=%s", m.Kind)
 	}
