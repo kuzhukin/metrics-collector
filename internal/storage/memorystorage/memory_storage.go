@@ -1,6 +1,11 @@
 package memorystorage
 
-import "github.com/kuzhukin/metrics-collector/internal/storage"
+import (
+	"fmt"
+
+	"github.com/kuzhukin/metrics-collector/internal/metric"
+	"github.com/kuzhukin/metrics-collector/internal/storage"
+)
 
 type memoryStorage struct {
 	gaugeMetrics   syncMemoryStorage[float64]
@@ -14,7 +19,18 @@ func New() storage.Storage {
 	}
 }
 
-func (s *memoryStorage) UpdateGauge(name string, value float64) error {
+func (u *memoryStorage) Update(m *metric.Metric) error {
+	switch m.Kind {
+	case metric.Gauge:
+		return u.updateGauge(m.Name, m.Value.Gauge())
+	case metric.Counter:
+		return u.updateCounter(m.Name, m.Value.Counter())
+	default:
+		return fmt.Errorf("doesn't have update handle func for kind=%s", m.Kind)
+	}
+}
+
+func (s *memoryStorage) updateGauge(name string, value float64) error {
 	s.gaugeMetrics.Update(func(storage map[string]float64) {
 		storage[name] = value
 	})
@@ -22,7 +38,7 @@ func (s *memoryStorage) UpdateGauge(name string, value float64) error {
 	return nil
 }
 
-func (s *memoryStorage) UpdateCounter(name string, value int64) error {
+func (s *memoryStorage) updateCounter(name string, value int64) error {
 	s.counterMetrics.Update(func(storage map[string]int64) {
 		storage[name] = value
 	})

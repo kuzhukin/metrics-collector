@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/kuzhukin/metrics-collector/cmd/server/parser"
-	"github.com/kuzhukin/metrics-collector/internal/metric"
 	"github.com/kuzhukin/metrics-collector/internal/shared"
 	"github.com/kuzhukin/metrics-collector/internal/storage"
 )
@@ -52,7 +51,7 @@ func (u *UpdateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := u.updateMetric(metric); err != nil {
+	if err := u.storage.Update(metric); err != nil {
 		fmt.Printf("Metrics=%v updating err=%s\n", metric, err)
 		w.WriteHeader(http.StatusInternalServerError)
 
@@ -61,31 +60,4 @@ func (u *UpdateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(http.StatusOK)
-}
-
-func (u *UpdateHandler) updateMetric(m *metric.Metric) error {
-	switch m.Kind {
-	case metric.Gauge:
-		return u.updateGauge(m.Name, m.Value.Gauge())
-	case metric.Counter:
-		return u.updateCounter(m.Name, m.Value.Counter())
-	default:
-		return fmt.Errorf("doesn't have update handle func for kind=%s", m.Kind)
-	}
-}
-
-func (u *UpdateHandler) updateGauge(name string, value float64) error {
-	if err := u.storage.UpdateGauge(name, value); err != nil {
-		return fmt.Errorf("update gauge name=%s value=%v, err=%w", name, value, err)
-	}
-
-	return nil
-}
-
-func (u *UpdateHandler) updateCounter(name string, value int64) error {
-	if err := u.storage.UpdateCounter(name, value); err != nil {
-		return fmt.Errorf("update counter name=%s value=%v, err=%w", name, value, err)
-	}
-
-	return nil
 }

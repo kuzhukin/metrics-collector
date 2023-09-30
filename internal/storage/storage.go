@@ -1,6 +1,8 @@
 package storage
 
+import "github.com/kuzhukin/metrics-collector/internal/metric"
+
+//go:generate mockgen -source=storage.go -destination=mockstorage/mock.go -package=mockstorage
 type Storage interface {
-	UpdateGauge(name string, value float64) error
-	UpdateCounter(name string, value int64) error
+	Update(*metric.Metric) error
 }
