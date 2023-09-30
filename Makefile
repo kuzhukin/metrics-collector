@@ -20,9 +20,16 @@ test:
 	@echo === Tests
 	go test -count 1 -v ./...
 
-clean:
-	rm server && \
-	rm agent
+define clean
+	rm ./cmd/$(1)/$(1)
+endef
+
+.PHONY: clean
+clean: $(patsubst %, clean-%, $(ALL_TARGETS))
+
+clean-%:
+	@echo === Cleaning $*
+	$(call clean,$*)
 
 # Linter constants
 LINTER := golangci-lint 
