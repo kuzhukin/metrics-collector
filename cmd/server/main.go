@@ -13,25 +13,16 @@ import (
 const hostport = ":8080"
 
 func main() {
+	storage := memorystorage.New()
+
 	router := chi.NewRouter()
-	router.Handle(shared.UpdateEndpoint, newUpdateHandler())
-	router.Handle(shared.ValueEndpoint, newValueHandler())
+	router.Route("/", func(r chi.Router) {
+		r.Handle(shared.UpdateEndpoint, handler.NewUpdateHandler(storage, parser.NewUpdateRequestParser()))
+		r.Handle(shared.ValueEndpoint, handler.NewValueHandler(storage, parser.NewValueRequestParser()))
+	})
 
 	err := http.ListenAndServe(hostport, router)
 	if err != nil {
 		panic(err)
 	}
-}
-
-func newUpdateHandler() *handler.UpdateHandler {
-	storage := memorystorage.New()
-	parser := parser.NewUpdateRequestParser()
-	return handler.NewUpdateHandler(storage, parser)
-}
-
-func newValueHandler() *handler.ValueHandler {
-	storage := memorystorage.New()
-	parser := parser.NewUpdateRequestParser()
-
-	return handler.NewValueHandler(storage, parser)
 }

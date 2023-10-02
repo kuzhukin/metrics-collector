@@ -26,6 +26,8 @@ func NewValueHandler(storage storage.Storage, parser parser.RequestParser) *Valu
 }
 
 func (u *ValueHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Value handler calling...")
+
 	if r.Method != http.MethodGet {
 		fmt.Printf("Endpoint %s supports only GET method\n", shared.ValueEndpoint)
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -49,12 +51,12 @@ func (u *ValueHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(http.StatusOK)
+
 	decodedValue := codec.Decode(metric)
 	_, err = io.WriteString(w, decodedValue)
 	if err != nil {
 		fmt.Printf("Write string, err=%s\n", err)
 	}
-
-	w.Header().Set("Content-Type", "text/plain")
-	w.WriteHeader(http.StatusOK)
 }

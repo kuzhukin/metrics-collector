@@ -26,6 +26,8 @@ func NewUpdateHandler(storage storage.Storage, parser parser.RequestParser) *Upd
 }
 
 func (u *UpdateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Update handler calling...")
+
 	if r.Method != http.MethodPost {
 		fmt.Printf("Endpoint %s supports only POST method\n", shared.UpdateEndpoint)
 		w.WriteHeader(http.StatusMethodNotAllowed)
