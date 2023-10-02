@@ -14,3 +14,11 @@ type Metric struct {
 	Name  string
 	Value Value
 }
+
+func NewMetric(kind Kind, name string, value Value) *Metric {
+	return &Metric{
+		Kind:  kind,
+		Name:  name,
+		Value: value,
+	}
+}

@@ -19,3 +19,12 @@ func (s *syncMemoryStorage[T]) Update(k string, value T) {
 
 	s.storage[k] = value
 }
+
+func (s *syncMemoryStorage[T]) Get(k string) (T, bool) {
+	s.Lock()
+	defer s.Unlock()
+
+	v, ok := s.storage[k]
+
+	return v, ok
+}

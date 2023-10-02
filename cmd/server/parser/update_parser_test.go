@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/kuzhukin/metrics-collector/cmd/server/codec"
 	"github.com/kuzhukin/metrics-collector/internal/metric"
 	"github.com/kuzhukin/metrics-collector/internal/shared"
 	"github.com/stretchr/testify/require"
@@ -78,7 +79,7 @@ func TestParseRequest(t *testing.T) {
 				"name":  "metric",
 				"value": "aaa",
 			},
-			expectedError: ErrBadMetricValue,
+			expectedError: codec.ErrBadMetricValue,
 		},
 		{
 			name: "bad counter value",
@@ -87,11 +88,11 @@ func TestParseRequest(t *testing.T) {
 				"name":  "metric",
 				"value": "100.1",
 			},
-			expectedError: ErrBadMetricValue,
+			expectedError: codec.ErrBadMetricValue,
 		},
 	}
 
-	parser := NewRequestParser()
+	parser := NewUpdateRequestParser()
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

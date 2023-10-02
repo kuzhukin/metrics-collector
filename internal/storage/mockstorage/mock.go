@@ -34,16 +34,31 @@ func (m *MockStorage) EXPECT() *MockStorageMockRecorder {
 	return m.recorder
 }
 
-// Update mocks base method.
-func (m *MockStorage) Update(arg0 *metric.Metric) error {
+// Get mocks base method.
+func (m *MockStorage) Get(kind metric.Kind, name string) (*metric.Metric, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Update", arg0)
+	ret := m.ctrl.Call(m, "Get", kind, name)
+	ret0, _ := ret[0].(*metric.Metric)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Get indicates an expected call of Get.
+func (mr *MockStorageMockRecorder) Get(kind, name interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStorage)(nil).Get), kind, name)
+}
+
+// Update mocks base method.
+func (m_2 *MockStorage) Update(m *metric.Metric) error {
+	m_2.ctrl.T.Helper()
+	ret := m_2.ctrl.Call(m_2, "Update", m)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Update indicates an expected call of Update.
-func (mr *MockStorageMockRecorder) Update(arg0 interface{}) *gomock.Call {
+func (mr *MockStorageMockRecorder) Update(m interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockStorage)(nil).Update), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockStorage)(nil).Update), m)
 }

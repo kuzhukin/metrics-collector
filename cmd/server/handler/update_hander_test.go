@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/kuzhukin/metrics-collector/cmd/server/codec"
 	"github.com/kuzhukin/metrics-collector/cmd/server/parser"
 	"github.com/kuzhukin/metrics-collector/cmd/server/parser/mockparser"
 	"github.com/kuzhukin/metrics-collector/internal/metric"
@@ -80,7 +81,7 @@ func TestParserErrorToStatusCodes(t *testing.T) {
 		},
 		{
 			name:         "bad metric value",
-			parserError:  parser.ErrBadMetricValue,
+			parserError:  codec.ErrBadMetricValue,
 			expectedCode: http.StatusBadRequest,
 		},
 		{

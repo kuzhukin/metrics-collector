@@ -14,7 +14,8 @@ const hostport = ":8080"
 
 func main() {
 	router := chi.NewRouter()
-	router.Handle(shared.UpdateEndpoint+"{kind}/{name}/{value}", createUpdateHander())
+	router.Handle(shared.UpdateEndpoint, newUpdateHandler())
+	router.Handle(shared.ValueEndpoint, newValueHandler())
 
 	err := http.ListenAndServe(hostport, router)
 	if err != nil {
@@ -22,8 +23,15 @@ func main() {
 	}
 }
 
-func createUpdateHander() *handler.UpdateHandler {
+func newUpdateHandler() *handler.UpdateHandler {
 	storage := memorystorage.New()
-	parser := parser.NewRequestParser()
+	parser := parser.NewUpdateRequestParser()
 	return handler.NewUpdateHandler(storage, parser)
+}
+
+func newValueHandler() *handler.ValueHandler {
+	storage := memorystorage.New()
+	parser := parser.NewUpdateRequestParser()
+
+	return handler.NewValueHandler(storage, parser)
 }

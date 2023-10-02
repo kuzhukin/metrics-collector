@@ -7,8 +7,9 @@ import (
 	"strconv"
 
 	"github.com/kuzhukin/metrics-collector/internal/metric"
-	"github.com/kuzhukin/metrics-collector/internal/shared"
 )
+
+const updateEndpoint = "/update/"
 
 //go:generate mockgen -source=reporter.go -destination=mockreporter/mock.go -package=mockreporter
 type Reporter interface {
@@ -69,5 +70,5 @@ func doReport(request string) error {
 }
 
 func makeUpdateRequest(hostport string, kind metric.Kind, name string, value string) string {
-	return hostport + shared.UpdateEndpoint + kind + "/" + name + "/" + value
+	return hostport + updateEndpoint + kind + "/" + name + "/" + value
 }

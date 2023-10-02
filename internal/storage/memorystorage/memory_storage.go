@@ -1,11 +1,16 @@
 package memorystorage
 
 import (
-	"fmt"
+	"errors"
 
 	"github.com/kuzhukin/metrics-collector/internal/metric"
 	"github.com/kuzhukin/metrics-collector/internal/storage"
 )
+
+var ErrUnknownMetric = errors.New("Unknown metric name")
+var ErrUnknownKind = errors.New("Unknown metric kind")
+
+var _ storage.Storage = &memoryStorage{}
 
 type memoryStorage struct {
 	gaugeMetrics   syncMemoryStorage[float64]
@@ -22,22 +27,36 @@ func New() storage.Storage {
 func (s *memoryStorage) Update(m *metric.Metric) error {
 	switch m.Kind {
 	case metric.Gauge:
-		return s.updateGauge(m.Name, m.Value.Gauge())
+		s.gaugeMetrics.Update(m.Name, m.Value.Gauge())
+
+		return nil
 	case metric.Counter:
-		return s.updateCounter(m.Name, m.Value.Counter())
+		s.counterMetrics.Update(m.Name, m.Value.Counter())
+
+		return nil
 	default:
-		return fmt.Errorf("doesn't have update handle func for kind=%s", m.Kind)
+		return ErrUnknownKind
 	}
 }
 
-func (s *memoryStorage) updateGauge(name string, value float64) error {
-	s.gaugeMetrics.Update(name, value)
+func (s *memoryStorage) Get(kind metric.Kind, name string) (*metric.Metric, error) {
+	switch kind {
+	case metric.Gauge:
+		gauge, ok := s.gaugeMetrics.Get(name)
+		if !ok {
+			return nil, ErrUnknownMetric
+		}
 
-	return nil
-}
+		return metric.NewMetric(kind, name, metric.GaugeValue(gauge)), nil
 
-func (s *memoryStorage) updateCounter(name string, value int64) error {
-	s.counterMetrics.Update(name, value)
+	case metric.Counter:
+		counter, ok := s.counterMetrics.Get(name)
+		if !ok {
+			return nil, ErrUnknownMetric
+		}
 
-	return nil
+		return metric.NewMetric(kind, name, metric.CounterValue(counter)), nil
+	default:
+		return nil, ErrUnknownKind
+	}
 }

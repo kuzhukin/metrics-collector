@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/kuzhukin/metrics-collector/cmd/server/codec"
 	"github.com/kuzhukin/metrics-collector/cmd/server/parser"
 	"github.com/kuzhukin/metrics-collector/internal/shared"
 	"github.com/kuzhukin/metrics-collector/internal/storage"
@@ -37,7 +38,7 @@ func (u *UpdateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, parser.ErrMetricNameIsNotFound) {
 			fmt.Printf("Metric name isn't found path=%s, err=%s\n", r.URL.Path, err)
 			w.WriteHeader(http.StatusNotFound)
-		} else if errors.Is(err, parser.ErrBadMetricValue) {
+		} else if errors.Is(err, codec.ErrBadMetricValue) {
 			fmt.Printf("Bad metric value path=%s, err=%s\n", r.URL.Path, err)
 			w.WriteHeader(http.StatusBadRequest)
 		} else if errors.Is(err, parser.ErrBadMetricKind) {
