@@ -50,7 +50,10 @@ func (u *ValueHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	decodedValue := codec.Decode(metric)
-	io.WriteString(w, decodedValue)
+	_, err = io.WriteString(w, decodedValue)
+	if err != nil {
+		fmt.Printf("Write string, err=%s\n", err)
+	}
 
 	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(http.StatusOK)

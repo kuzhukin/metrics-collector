@@ -1,6 +1,6 @@
 package codec
 
-const EmptyHtml = `
+const EmptyHTML = `
 <!doctype html>
 <html lang="ru">
 <head>

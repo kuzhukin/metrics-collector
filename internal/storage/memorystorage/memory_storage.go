@@ -7,8 +7,8 @@ import (
 	"github.com/kuzhukin/metrics-collector/internal/storage"
 )
 
-var ErrUnknownMetric = errors.New("Unknown metric name")
-var ErrUnknownKind = errors.New("Unknown metric kind")
+var ErrUnknownMetric = errors.New("unknown metric name")
+var ErrUnknownKind = errors.New("unknown metric kind")
 
 var _ storage.Storage = &memoryStorage{}
 
