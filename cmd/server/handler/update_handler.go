@@ -32,7 +32,7 @@ func (u *UpdateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	metric, err := u.parser.Parse(r.URL.Path)
+	metric, err := u.parser.Parse(r)
 	if err != nil {
 		if errors.Is(err, parser.ErrMetricNameIsNotFound) {
 			fmt.Printf("Metric name isn't found path=%s, err=%s\n", r.URL.Path, err)

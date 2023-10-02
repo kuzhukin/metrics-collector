@@ -2,18 +2,11 @@ package parser
 
 import (
 	"errors"
-	"fmt"
+	"net/http"
 	"strconv"
-	"strings"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/kuzhukin/metrics-collector/internal/metric"
-	"github.com/kuzhukin/metrics-collector/internal/shared"
-)
-
-const (
-	kindIdx = iota
-	nameIdx
-	valueIdx
 )
 
 var ErrMetricNameIsNotFound error = errors.New("metric name isn't found")
@@ -22,7 +15,7 @@ var ErrBadMetricKind error = errors.New("bad metric kind")
 
 //go:generate mockgen -source=parser.go -destination=mockparser/mock.go -package=mockparser
 type RequestParser interface {
-	Parse(request string) (*metric.Metric, error)
+	Parse(r *http.Request) (*metric.Metric, error)
 }
 
 type requestParserImpl struct {
@@ -38,29 +31,21 @@ func NewRequestParser() RequestParser {
 	}
 }
 
-func (p *requestParserImpl) Parse(request string) (*metric.Metric, error) {
-	metricRequest := cutUpdateEndpoint(request)
+func (p *requestParserImpl) Parse(r *http.Request) (*metric.Metric, error) {
+	kind := chi.URLParam(r, "kind")
+	name := chi.URLParam(r, "name")
+	value := chi.URLParam(r, "value")
 
-	params := strings.Split(metricRequest, "/")
-	if len(params) != 3 || params[nameIdx] == "" {
+	if name == "" {
 		return nil, ErrMetricNameIsNotFound
 	}
 
-	v, err := p.parseValueByKind(params[kindIdx], params[valueIdx])
+	v, err := p.parseValueByKind(kind, value)
 	if err != nil {
 		return nil, err
 	}
 
-	return &metric.Metric{Kind: params[kindIdx], Name: params[nameIdx], Value: v}, nil
-}
-
-func cutUpdateEndpoint(urlPath string) string {
-	metricPath, ok := strings.CutPrefix(urlPath, shared.UpdateEndpoint)
-	if !ok {
-		panic(fmt.Sprintf("bad metric format, prefix=%s, path=%s", shared.UpdateEndpoint, urlPath))
-	}
-
-	return metricPath
+	return &metric.Metric{Kind: kind, Name: name, Value: v}, nil
 }
 
 type valueParser = func(val string) (metric.Value, error)

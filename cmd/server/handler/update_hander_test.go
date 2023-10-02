@@ -50,7 +50,7 @@ func TestSuccessUpload(t *testing.T) {
 	r := httptest.NewRequest(http.MethodPost, fakeURLPath, nil)
 	w := httptest.NewRecorder()
 
-	mockParser.EXPECT().Parse(fakeURLPath).Return(fakeMetric, nil)
+	mockParser.EXPECT().Parse(r).Return(fakeMetric, nil)
 	mockStorage.EXPECT().Update(fakeMetric).Return(nil)
 
 	handler.ServeHTTP(w, r)
@@ -100,7 +100,7 @@ func TestParserErrorToStatusCodes(t *testing.T) {
 			r := httptest.NewRequest(http.MethodPost, fakeURLPath, nil)
 			w := httptest.NewRecorder()
 
-			mockParser.EXPECT().Parse(fakeURLPath).Return(nil, test.parserError)
+			mockParser.EXPECT().Parse(r).Return(nil, test.parserError)
 			handler.ServeHTTP(w, r)
 			require.Equal(t, test.expectedCode, w.Code)
 		})
@@ -119,7 +119,7 @@ func TestStorageErrorToStatusCodes(t *testing.T) {
 	r := httptest.NewRequest(http.MethodPost, fakeURLPath, nil)
 	w := httptest.NewRecorder()
 
-	mockParser.EXPECT().Parse(fakeURLPath).Return(fakeMetric, nil)
+	mockParser.EXPECT().Parse(r).Return(fakeMetric, nil)
 	mockStorage.EXPECT().Update(fakeMetric).Return(errors.New("update error"))
 	handler.ServeHTTP(w, r)
 	require.Equal(t, http.StatusInternalServerError, w.Code)

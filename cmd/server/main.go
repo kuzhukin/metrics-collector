@@ -3,6 +3,7 @@ package main
 import (
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/kuzhukin/metrics-collector/cmd/server/handler"
 	"github.com/kuzhukin/metrics-collector/cmd/server/parser"
 	"github.com/kuzhukin/metrics-collector/internal/shared"
@@ -12,17 +13,17 @@ import (
 const hostport = ":8080"
 
 func main() {
-	mux := http.NewServeMux()
-	registerHandlers(mux)
+	router := chi.NewRouter()
+	router.Handle(shared.UpdateEndpoint+"{kind}/{name}/{value}", createUpdateHander())
 
-	err := http.ListenAndServe(hostport, mux)
+	err := http.ListenAndServe(hostport, router)
 	if err != nil {
 		panic(err)
 	}
 }
 
-func registerHandlers(mux *http.ServeMux) {
+func createUpdateHander() *handler.UpdateHandler {
 	storage := memorystorage.New()
 	parser := parser.NewRequestParser()
-	mux.Handle(shared.UpdateEndpoint, handler.NewUpdateHandler(storage, parser))
+	return handler.NewUpdateHandler(storage, parser)
 }

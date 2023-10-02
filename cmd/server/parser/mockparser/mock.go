@@ -5,6 +5,7 @@
 package mockparser
 
 import (
+	http "net/http"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -35,16 +36,16 @@ func (m *MockRequestParser) EXPECT() *MockRequestParserMockRecorder {
 }
 
 // Parse mocks base method.
-func (m *MockRequestParser) Parse(request string) (*metric.Metric, error) {
+func (m *MockRequestParser) Parse(r *http.Request) (*metric.Metric, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Parse", request)
+	ret := m.ctrl.Call(m, "Parse", r)
 	ret0, _ := ret[0].(*metric.Metric)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Parse indicates an expected call of Parse.
-func (mr *MockRequestParserMockRecorder) Parse(request interface{}) *gomock.Call {
+func (mr *MockRequestParserMockRecorder) Parse(r interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Parse", reflect.TypeOf((*MockRequestParser)(nil).Parse), request)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Parse", reflect.TypeOf((*MockRequestParser)(nil).Parse), r)
 }
