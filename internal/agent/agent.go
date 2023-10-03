@@ -5,11 +5,9 @@ import (
 	"github.com/kuzhukin/metrics-collector/internal/agent/reporter"
 )
 
-const hostport = "http://localhost:8080"
-
-func Run() error {
-	reporter := reporter.New(hostport)
-	controller.New(reporter).Start()
+func Run(config Config) error {
+	reporter := reporter.New(config.Hostport)
+	controller.New(reporter, config.PollingInterval, config.ReportInterval).Start()
 
 	return nil
 }

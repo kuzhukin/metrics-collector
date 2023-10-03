@@ -9,10 +9,10 @@ import (
 	"github.com/kuzhukin/metrics-collector/internal/agent/reporter"
 )
 
-const pollIntervalSec = 2
-const reportInterval = 10
-
 type Controller struct {
+	polingInterval int
+	reportInterval int
+
 	gaugeMetrics   map[string]float64
 	counterMetrics map[string]int64
 
@@ -21,8 +21,10 @@ type Controller struct {
 	done chan struct{}
 }
 
-func New(reporter reporter.Reporter) *Controller {
+func New(reporter reporter.Reporter, pollingInterval, reportInterval int) *Controller {
 	return &Controller{
+		polingInterval: pollingInterval,
+		reportInterval: reportInterval,
 		gaugeMetrics:   make(map[string]float64),
 		counterMetrics: make(map[string]int64),
 		reporter:       reporter,
@@ -41,10 +43,10 @@ func (c *Controller) Stop() {
 func (c *Controller) loop() {
 	fmt.Printf("Controller started\n")
 
-	pollingTicker := time.NewTicker(time.Second * pollIntervalSec)
+	pollingTicker := time.NewTicker(time.Second * time.Duration(c.polingInterval))
 	defer pollingTicker.Stop()
 
-	reportTicker := time.NewTicker(time.Second * reportInterval)
+	reportTicker := time.NewTicker(time.Second * time.Duration(c.reportInterval))
 	defer reportTicker.Stop()
 
 	for {

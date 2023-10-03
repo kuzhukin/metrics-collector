@@ -11,9 +11,7 @@ import (
 	"github.com/kuzhukin/metrics-collector/internal/server/storage/memorystorage"
 )
 
-const hostport = ":8080"
-
-func Run() error {
+func Run(conf Config) error {
 	storage := memorystorage.New()
 
 	router := chi.NewRouter()
@@ -26,9 +24,9 @@ func Run() error {
 	router.Handle(endpoint.UpdateEndpoint, updateHandler)
 	router.Handle(endpoint.ValueEndpoint, valueHandler)
 
-	err := http.ListenAndServe(hostport, router)
+	err := http.ListenAndServe(conf.Hostport, router)
 	if err != nil {
-		return fmt.Errorf("http listen and server, hostport=%s, err=%w", hostport, err)
+		return fmt.Errorf("http listen and serve, hostport=%s, err=%w", conf.Hostport, err)
 	}
 
 	return nil

@@ -10,12 +10,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const reportInterval = 10
+const pollingInterval = 2
+
 func TestControllerPolling(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
 	mockReporter := mockreporter.NewMockReporter(ctrl)
-	controller := New(mockReporter)
+	controller := New(mockReporter, pollingInterval, reportInterval)
 	require.Len(t, controller.gaugeMetrics, 0)
 
 	wg := &sync.WaitGroup{}
@@ -25,7 +28,7 @@ func TestControllerPolling(t *testing.T) {
 
 	// waiting 2 polling intervals
 	const pollIntervalsCount = 2
-	time.Sleep(time.Second*pollIntervalSec*pollIntervalsCount + time.Second)
+	time.Sleep(time.Second*pollingInterval*pollIntervalsCount + time.Second)
 
 	controller.Stop()
 
@@ -42,7 +45,7 @@ func TestControllerReporting(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockReporter := mockreporter.NewMockReporter(ctrl)
-	controller := New(mockReporter)
+	controller := New(mockReporter, pollingInterval, reportInterval)
 	require.Len(t, controller.gaugeMetrics, 0)
 
 	wg := &sync.WaitGroup{}
