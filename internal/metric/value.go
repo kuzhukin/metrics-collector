@@ -23,3 +23,14 @@ func (g CounterValue) Gauge() float64 {
 func (g CounterValue) Counter() int64 {
 	return int64(g)
 }
+
+func NewValueByKind[T float64 | int64](kind Kind, value T) Value {
+	switch kind {
+	case Gauge:
+		return GaugeValue(value)
+	case Counter:
+		return CounterValue(value)
+	}
+
+	panic("bad kind")
+}

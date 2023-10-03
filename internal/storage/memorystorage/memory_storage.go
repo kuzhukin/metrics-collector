@@ -60,3 +60,22 @@ func (s *memoryStorage) Get(kind metric.Kind, name string) (*metric.Metric, erro
 		return nil, ErrUnknownKind
 	}
 }
+
+func (s *memoryStorage) List() []*metric.Metric {
+	allGauges := s.gaugeMetrics.GetAll()
+	allCounters := s.counterMetrics.GetAll()
+
+	list := make([]*metric.Metric, 0, len(allCounters)+len(allGauges))
+	list = addMetricsToListp(allGauges, metric.Gauge, list)
+	list = addMetricsToListp(allCounters, metric.Counter, list)
+
+	return list
+}
+
+func addMetricsToListp[T float64 | int64](metrics map[string]T, kind metric.Kind, list []*metric.Metric) []*metric.Metric {
+	for name, valT := range metrics {
+		list = append(list, metric.NewMetric(kind, name, metric.NewValueByKind(kind, valT)))
+	}
+
+	return list
+}

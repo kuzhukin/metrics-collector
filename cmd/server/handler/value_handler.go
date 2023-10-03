@@ -45,7 +45,7 @@ func (u *ValueHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	metric, err = u.storage.Get(metric.Kind, metric.Name)
 	if err != nil {
-		fmt.Printf("Metrics=%v updating err=%s\n", metric, err)
+		fmt.Printf("Metrics=%v get err=%s\n", metric, err)
 		w.WriteHeader(http.StatusNotFound)
 
 		return
@@ -54,7 +54,7 @@ func (u *ValueHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(http.StatusOK)
 
-	decodedValue := codec.Decode(metric)
+	decodedValue := codec.DecodeValue(metric)
 	_, err = io.WriteString(w, decodedValue)
 	if err != nil {
 		fmt.Printf("Write string, err=%s\n", err)

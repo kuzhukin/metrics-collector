@@ -49,6 +49,20 @@ func (mr *MockStorageMockRecorder) Get(kind, name interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStorage)(nil).Get), kind, name)
 }
 
+// List mocks base method.
+func (m *MockStorage) List() []*metric.Metric {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "List")
+	ret0, _ := ret[0].([]*metric.Metric)
+	return ret0
+}
+
+// List indicates an expected call of List.
+func (mr *MockStorageMockRecorder) List() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockStorage)(nil).List))
+}
+
 // Update mocks base method.
 func (m_2 *MockStorage) Update(m *metric.Metric) error {
 	m_2.ctrl.T.Helper()

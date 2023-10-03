@@ -35,3 +35,16 @@ func (s *syncMemoryStorage[T]) Get(k string) (T, bool) {
 
 	return v, ok
 }
+
+func (s *syncMemoryStorage[T]) GetAll() map[string]T {
+	s.Lock()
+	defer s.Unlock()
+
+	copy := make(map[string]T, len(s.storage))
+
+	for k, v := range s.storage {
+		copy[k] = v
+	}
+
+	return copy
+}

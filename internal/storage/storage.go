@@ -6,4 +6,5 @@ import "github.com/kuzhukin/metrics-collector/internal/metric"
 type Storage interface {
 	Update(m *metric.Metric) error
 	Get(kind metric.Kind, name string) (*metric.Metric, error)
+	List() []*metric.Metric
 }

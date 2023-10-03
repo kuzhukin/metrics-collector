@@ -16,10 +16,14 @@ func main() {
 	storage := memorystorage.New()
 
 	router := chi.NewRouter()
-	router.Route("/", func(r chi.Router) {
-		r.Handle(shared.UpdateEndpoint, handler.NewUpdateHandler(storage, parser.NewUpdateRequestParser()))
-		r.Handle(shared.ValueEndpoint, handler.NewValueHandler(storage, parser.NewValueRequestParser()))
-	})
+
+	listHandler := handler.NewGetListHandler(storage)
+	updateHandler := handler.NewUpdateHandler(storage, parser.NewUpdateRequestParser())
+	valueHandler := handler.NewValueHandler(storage, parser.NewValueRequestParser())
+
+	router.Handle(shared.RootEndpoint, listHandler)
+	router.Handle(shared.UpdateEndpoint, updateHandler)
+	router.Handle(shared.ValueEndpoint, valueHandler)
 
 	err := http.ListenAndServe(hostport, router)
 	if err != nil {
