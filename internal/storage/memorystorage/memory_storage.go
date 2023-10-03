@@ -27,11 +27,11 @@ func New() storage.Storage {
 func (s *memoryStorage) Update(m *metric.Metric) error {
 	switch m.Kind {
 	case metric.Gauge:
-		s.gaugeMetrics.Update(m.Name, m.Value.Gauge())
+		s.gaugeMetrics.Write(m.Name, m.Value.Gauge())
 
 		return nil
 	case metric.Counter:
-		s.counterMetrics.Update(m.Name, m.Value.Counter())
+		s.counterMetrics.Sum(m.Name, m.Value.Counter())
 
 		return nil
 	default:

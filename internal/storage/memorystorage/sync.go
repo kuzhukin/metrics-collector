@@ -13,11 +13,18 @@ type syncMemoryStorage[T int64 | float64] struct {
 	storage map[string]T
 }
 
-func (s *syncMemoryStorage[T]) Update(k string, value T) {
+func (s *syncMemoryStorage[T]) Write(k string, value T) {
 	s.Lock()
 	defer s.Unlock()
 
 	s.storage[k] = value
+}
+
+func (s *syncMemoryStorage[T]) Sum(k string, value T) {
+	s.Lock()
+	defer s.Unlock()
+
+	s.storage[k] += value
 }
 
 func (s *syncMemoryStorage[T]) Get(k string) (T, bool) {
