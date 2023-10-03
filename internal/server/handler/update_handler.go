@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/kuzhukin/metrics-collector/cmd/server/codec"
-	"github.com/kuzhukin/metrics-collector/cmd/server/parser"
-	"github.com/kuzhukin/metrics-collector/internal/shared"
-	"github.com/kuzhukin/metrics-collector/internal/storage"
+	"github.com/kuzhukin/metrics-collector/internal/server/codec"
+	"github.com/kuzhukin/metrics-collector/internal/server/endpoint"
+	"github.com/kuzhukin/metrics-collector/internal/server/parser"
+	"github.com/kuzhukin/metrics-collector/internal/server/storage"
 )
 
 var _ http.Handler = &UpdateHandler{}
@@ -26,10 +26,10 @@ func NewUpdateHandler(storage storage.Storage, parser parser.RequestParser) *Upd
 }
 
 func (u *UpdateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Update handler calling...")
+	fmt.Printf("Update handler calling, request=%s\n", r.URL.Path)
 
 	if r.Method != http.MethodPost {
-		fmt.Printf("Endpoint %s supports only POST method\n", shared.UpdateEndpoint)
+		fmt.Printf("Endpoint %s supports only POST method\n", endpoint.UpdateEndpoint)
 		w.WriteHeader(http.StatusMethodNotAllowed)
 
 		return

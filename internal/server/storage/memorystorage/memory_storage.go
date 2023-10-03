@@ -3,8 +3,8 @@ package memorystorage
 import (
 	"errors"
 
-	"github.com/kuzhukin/metrics-collector/internal/metric"
-	"github.com/kuzhukin/metrics-collector/internal/storage"
+	"github.com/kuzhukin/metrics-collector/internal/server/metric"
+	"github.com/kuzhukin/metrics-collector/internal/server/storage"
 )
 
 var ErrUnknownMetric = errors.New("unknown metric name")

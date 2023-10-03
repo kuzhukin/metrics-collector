@@ -1,6 +1,4 @@
-package shared
-
-const ()
+package endpoint
 
 const (
 	RootEndpoint   = "/"

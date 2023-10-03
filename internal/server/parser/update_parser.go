@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/kuzhukin/metrics-collector/cmd/server/codec"
-	"github.com/kuzhukin/metrics-collector/internal/metric"
+	"github.com/kuzhukin/metrics-collector/internal/server/codec"
+	"github.com/kuzhukin/metrics-collector/internal/server/metric"
 )
 
 var _ RequestParser = &requestUpdateParserImpl{}

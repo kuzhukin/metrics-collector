@@ -7,11 +7,11 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/kuzhukin/metrics-collector/cmd/server/codec"
-	"github.com/kuzhukin/metrics-collector/cmd/server/parser"
-	"github.com/kuzhukin/metrics-collector/cmd/server/parser/mockparser"
-	"github.com/kuzhukin/metrics-collector/internal/metric"
-	"github.com/kuzhukin/metrics-collector/internal/storage/mockstorage"
+	"github.com/kuzhukin/metrics-collector/internal/server/codec"
+	"github.com/kuzhukin/metrics-collector/internal/server/metric"
+	"github.com/kuzhukin/metrics-collector/internal/server/parser"
+	"github.com/kuzhukin/metrics-collector/internal/server/parser/mockparser"
+	"github.com/kuzhukin/metrics-collector/internal/server/storage/mockstorage"
 	"github.com/stretchr/testify/require"
 )
 

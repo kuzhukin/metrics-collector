@@ -4,7 +4,7 @@ import (
 	"errors"
 	"strconv"
 
-	"github.com/kuzhukin/metrics-collector/internal/metric"
+	"github.com/kuzhukin/metrics-collector/internal/server/metric"
 )
 
 var ErrBadMetricValue error = errors.New("bad metric value")

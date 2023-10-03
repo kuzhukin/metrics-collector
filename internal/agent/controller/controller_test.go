@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	"github.com/kuzhukin/metrics-collector/cmd/agent/reporter/mockreporter"
+	"github.com/kuzhukin/metrics-collector/internal/agent/reporter/mockreporter"
 	"github.com/stretchr/testify/require"
 )
 

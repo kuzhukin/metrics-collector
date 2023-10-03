@@ -3,7 +3,7 @@ package codec
 import (
 	"fmt"
 
-	"github.com/kuzhukin/metrics-collector/internal/metric"
+	"github.com/kuzhukin/metrics-collector/internal/server/metric"
 )
 
 const EmptyHTML = `

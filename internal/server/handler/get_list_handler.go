@@ -5,9 +5,9 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/kuzhukin/metrics-collector/cmd/server/codec"
-	"github.com/kuzhukin/metrics-collector/internal/shared"
-	"github.com/kuzhukin/metrics-collector/internal/storage"
+	"github.com/kuzhukin/metrics-collector/internal/server/codec"
+	"github.com/kuzhukin/metrics-collector/internal/server/endpoint"
+	"github.com/kuzhukin/metrics-collector/internal/server/storage"
 )
 
 var _ http.Handler = &GetListHandler{}
@@ -23,10 +23,10 @@ func NewGetListHandler(storage storage.Storage) *GetListHandler {
 }
 
 func (u *GetListHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Get list handler calling...")
+	fmt.Printf("Get list handler calling, request=%s\n", r.URL.Path)
 
 	if r.Method != http.MethodGet {
-		fmt.Printf("Endpoint %s supports only GET method\n", shared.ValueEndpoint)
+		fmt.Printf("Endpoint %s supports only GET method\n", endpoint.ValueEndpoint)
 		w.WriteHeader(http.StatusMethodNotAllowed)
 
 		return

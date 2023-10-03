@@ -5,10 +5,10 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/kuzhukin/metrics-collector/cmd/server/codec"
-	"github.com/kuzhukin/metrics-collector/cmd/server/parser"
-	"github.com/kuzhukin/metrics-collector/internal/shared"
-	"github.com/kuzhukin/metrics-collector/internal/storage"
+	"github.com/kuzhukin/metrics-collector/internal/server/codec"
+	"github.com/kuzhukin/metrics-collector/internal/server/endpoint"
+	"github.com/kuzhukin/metrics-collector/internal/server/parser"
+	"github.com/kuzhukin/metrics-collector/internal/server/storage"
 )
 
 var _ http.Handler = &ValueHandler{}
@@ -26,10 +26,10 @@ func NewValueHandler(storage storage.Storage, parser parser.RequestParser) *Valu
 }
 
 func (u *ValueHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Value handler calling...")
+	fmt.Printf("Value handler calling, request=%s\n", r.URL.Path)
 
 	if r.Method != http.MethodGet {
-		fmt.Printf("Endpoint %s supports only GET method\n", shared.ValueEndpoint)
+		fmt.Printf("Endpoint %s supports only GET method\n", endpoint.ValueEndpoint)
 		w.WriteHeader(http.StatusMethodNotAllowed)
 
 		return

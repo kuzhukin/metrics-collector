@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/kuzhukin/metrics-collector/cmd/server/codec"
-	"github.com/kuzhukin/metrics-collector/internal/metric"
-	"github.com/kuzhukin/metrics-collector/internal/shared"
+	"github.com/kuzhukin/metrics-collector/internal/server/codec"
+	"github.com/kuzhukin/metrics-collector/internal/server/endpoint"
+	"github.com/kuzhukin/metrics-collector/internal/server/metric"
 	"github.com/stretchr/testify/require"
 )
 
@@ -104,7 +104,7 @@ func TestParseRequest(t *testing.T) {
 }
 
 func prepareRequest(t *testing.T, params map[string]string) *http.Request {
-	r, err := http.NewRequest(http.MethodPost, shared.UpdateEndpoint, nil)
+	r, err := http.NewRequest(http.MethodPost, endpoint.UpdateEndpoint, nil)
 	require.NoError(t, err)
 
 	routeCtx := chi.NewRouteContext()

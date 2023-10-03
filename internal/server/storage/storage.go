@@ -1,6 +1,6 @@
 package storage
 
-import "github.com/kuzhukin/metrics-collector/internal/metric"
+import "github.com/kuzhukin/metrics-collector/internal/server/metric"
 
 //go:generate mockgen -source=storage.go -destination=mockstorage/mock.go -package=mockstorage
 type Storage interface {

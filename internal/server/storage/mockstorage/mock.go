@@ -8,7 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	metric "github.com/kuzhukin/metrics-collector/internal/metric"
+	metric "github.com/kuzhukin/metrics-collector/internal/server/metric"
 )
 
 // MockStorage is a mock of Storage interface.

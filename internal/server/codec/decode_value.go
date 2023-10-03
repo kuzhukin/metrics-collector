@@ -3,7 +3,7 @@ package codec
 import (
 	"strconv"
 
-	"github.com/kuzhukin/metrics-collector/internal/metric"
+	"github.com/kuzhukin/metrics-collector/internal/server/metric"
 )
 
 type dencodeFunc = func(m *metric.Metric) string

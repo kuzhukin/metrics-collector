@@ -9,7 +9,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	metric "github.com/kuzhukin/metrics-collector/internal/metric"
+	metric "github.com/kuzhukin/metrics-collector/internal/server/metric"
 )
 
 // MockRequestParser is a mock of RequestParser interface.

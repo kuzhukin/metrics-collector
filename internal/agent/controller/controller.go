@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/kuzhukin/metrics-collector/cmd/agent/reporter"
+	"github.com/kuzhukin/metrics-collector/internal/agent/reporter"
 )
 
 const pollIntervalSec = 2
