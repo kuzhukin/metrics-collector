@@ -6,7 +6,7 @@ import (
 )
 
 func Run(config Config) error {
-	reporter := reporter.New(config.Hostport)
+	reporter := reporter.New("http://" + config.Hostport)
 	controller.New(reporter, config.PollingInterval, config.ReportInterval).Start()
 
 	return nil

@@ -17,12 +17,12 @@ type Reporter interface {
 }
 
 type reporterImpl struct {
-	hostport string
+	URL string
 }
 
-func New(hostport string) Reporter {
+func New(URL string) Reporter {
 	return &reporterImpl{
-		hostport: hostport,
+		URL: URL,
 	}
 }
 
@@ -34,7 +34,7 @@ func (r *reporterImpl) Report(gaugeMetrics map[string]float64, counterMetrics ma
 func (r *reporterImpl) reportGauge(gaugeMetrics map[string]float64) {
 	for name, value := range gaugeMetrics {
 		encodedValue := strconv.FormatFloat(value, 'G', -1, 64)
-		request := makeUpdateRequest(r.hostport, metric.Gauge, name, encodedValue)
+		request := makeUpdateRequest(r.URL, metric.Gauge, name, encodedValue)
 
 		if err := doReport(request); err != nil {
 			fmt.Printf("Do gauge metric report=%s, err=%s\n", request, err)
@@ -45,7 +45,7 @@ func (r *reporterImpl) reportGauge(gaugeMetrics map[string]float64) {
 func (r *reporterImpl) reportCounter(counterMetrics map[string]int64) {
 	for name, value := range counterMetrics {
 		encodedValue := strconv.FormatInt(value, 10)
-		request := makeUpdateRequest(r.hostport, metric.Counter, name, encodedValue)
+		request := makeUpdateRequest(r.URL, metric.Counter, name, encodedValue)
 
 		if err := doReport(request); err != nil {
 			fmt.Printf("Do counters metric report=%s, err=%s\n", request, err)
@@ -69,6 +69,6 @@ func doReport(request string) error {
 	return nil
 }
 
-func makeUpdateRequest(hostport string, kind metric.Kind, name string, value string) string {
-	return hostport + updateEndpoint + kind + "/" + name + "/" + value
+func makeUpdateRequest(URL string, kind metric.Kind, name string, value string) string {
+	return URL + updateEndpoint + kind + "/" + name + "/" + value
 }

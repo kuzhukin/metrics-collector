@@ -21,13 +21,11 @@ func main() {
 func makeConfig() agent.Config {
 	conf := agent.Config{}
 
-	hostport := flag.String("a", hostportDefault, "Set ip:port of server")
+	flag.StringVar(&conf.Hostport, "a", hostportDefault, "Set ip:port of server")
 	flag.IntVar(&conf.ReportInterval, "r", reportIntervalDefault, "Interval in seconds to sending metrics snapshot to server")
 	flag.IntVar(&conf.PollingInterval, "p", pollIntervalSecDefault, "Interval in seconds for polling and collecting metrics")
 
 	flag.Parse()
-
-	conf.Hostport = "http://" + *hostport
 
 	return conf
 }
