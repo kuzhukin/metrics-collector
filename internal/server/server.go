@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -11,7 +12,12 @@ import (
 	"github.com/kuzhukin/metrics-collector/internal/server/storage/memorystorage"
 )
 
-func Run(conf Config) error {
+type MetricServer struct {
+	srvr http.Server
+	wait chan struct{}
+}
+
+func StartNew(config Config) *MetricServer {
 	storage := memorystorage.New()
 
 	router := chi.NewRouter()
@@ -24,12 +30,29 @@ func Run(conf Config) error {
 	router.Handle(endpoint.UpdateEndpoint, updateHandler)
 	router.Handle(endpoint.ValueEndpoint, valueHandler)
 
-	fmt.Println("Server will started in addr=", conf.Hostport)
-
-	err := http.ListenAndServe(conf.Hostport, router)
-	if err != nil {
-		return fmt.Errorf("http listen and serve, hostport=%s, err=%w", conf.Hostport, err)
+	server := &MetricServer{
+		srvr: http.Server{
+			Addr:    config.Hostport,
+			Handler: router,
+		},
+		wait: make(chan struct{}),
 	}
 
-	return nil
+	go func() {
+		defer close(server.wait)
+
+		if err := server.srvr.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			fmt.Printf("Http listen and serve, address=%s, err=%s\n", server.srvr.Addr, err)
+		}
+	}()
+
+	return server
+}
+
+func (s *MetricServer) Stop() error {
+	return s.srvr.Shutdown(context.Background())
+}
+
+func (s *MetricServer) Wait() <-chan struct{} {
+	return s.wait
 }
