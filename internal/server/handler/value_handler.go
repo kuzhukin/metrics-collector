@@ -2,7 +2,6 @@ package handler
 
 import (
 	"fmt"
-	"io"
 	"net/http"
 
 	"github.com/kuzhukin/metrics-collector/internal/server/codec"
@@ -55,7 +54,7 @@ func (u *ValueHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
 	decodedValue := codec.DecodeValue(metric)
-	_, err = io.WriteString(w, decodedValue)
+	_, err = w.Write([]byte(decodedValue))
 	if err != nil {
 		fmt.Printf("Write string, err=%s\n", err)
 	}

@@ -2,6 +2,7 @@ package memorystorage
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/kuzhukin/metrics-collector/internal/server/metric"
 	"github.com/kuzhukin/metrics-collector/internal/server/storage"
@@ -66,15 +67,20 @@ func (s *memoryStorage) List() []*metric.Metric {
 	allCounters := s.counterMetrics.GetAll()
 
 	list := make([]*metric.Metric, 0, len(allCounters)+len(allGauges))
-	list = addMetricsToListp(allGauges, metric.Gauge, list)
-	list = addMetricsToListp(allCounters, metric.Counter, list)
+	list = addMetricsToList(allGauges, metric.Gauge, list)
+	list = addMetricsToList(allCounters, metric.Counter, list)
 
 	return list
 }
 
-func addMetricsToListp[T float64 | int64](metrics map[string]T, kind metric.Kind, list []*metric.Metric) []*metric.Metric {
+func addMetricsToList[T float64 | int64](metrics map[string]T, kind metric.Kind, list []*metric.Metric) []*metric.Metric {
 	for name, valT := range metrics {
-		list = append(list, metric.NewMetric(kind, name, metric.NewValueByKind(kind, valT)))
+		val, err := metric.NewValueByKind(kind, valT)
+		if err != nil {
+			fmt.Printf("new value by kind=%s, err=%s", kind, err)
+		}
+
+		list = append(list, metric.NewMetric(kind, name, val))
 	}
 
 	return list
