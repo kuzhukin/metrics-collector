@@ -2,7 +2,9 @@ package main
 
 import (
 	"flag"
+	"fmt"
 
+	"github.com/caarlos0/env/v6"
 	"github.com/kuzhukin/metrics-collector/internal/agent"
 )
 
@@ -13,19 +15,31 @@ const (
 )
 
 func main() {
-	if err := agent.Run(makeConfig()); err != nil {
+	if err := run(); err != nil {
 		panic(err)
 	}
 }
 
-func makeConfig() agent.Config {
-	conf := agent.Config{}
+func run() error {
+	config, err := makeConfig()
+	if err != nil {
+		return fmt.Errorf("make config, err=%w", err)
+	}
 
-	flag.StringVar(&conf.Hostport, "a", hostportDefault, "Set ip:port of server")
-	flag.IntVar(&conf.ReportInterval, "r", reportIntervalDefault, "Interval in seconds to sending metrics snapshot to server")
-	flag.IntVar(&conf.PollingInterval, "p", pollIntervalSecDefault, "Interval in seconds for polling and collecting metrics")
+	return agent.Run(config)
+}
 
+func makeConfig() (agent.Config, error) {
+	config := agent.Config{}
+
+	flag.StringVar(&config.Hostport, "a", hostportDefault, "Set ip:port of server")
+	flag.IntVar(&config.ReportInterval, "r", reportIntervalDefault, "Interval in seconds for sending metrics snapshot to server")
+	flag.IntVar(&config.PollInterval, "p", pollIntervalSecDefault, "Interval in seconds for polling and collecting metrics")
 	flag.Parse()
 
-	return conf
+	if err := env.Parse(&config); err != nil {
+		return config, fmt.Errorf("parse env err=%w", err)
+	}
+
+	return config, nil
 }

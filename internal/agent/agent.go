@@ -7,7 +7,7 @@ import (
 
 func Run(config Config) error {
 	reporter := reporter.New("http://" + config.Hostport)
-	controller.New(reporter, config.PollingInterval, config.ReportInterval).Start()
+	controller.New(reporter, config.PollInterval, config.ReportInterval).Start()
 
 	return nil
 }

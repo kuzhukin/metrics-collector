@@ -24,6 +24,8 @@ func Run(conf Config) error {
 	router.Handle(endpoint.UpdateEndpoint, updateHandler)
 	router.Handle(endpoint.ValueEndpoint, valueHandler)
 
+	fmt.Println("Server will started in addr=", conf.Hostport)
+
 	err := http.ListenAndServe(conf.Hostport, router)
 	if err != nil {
 		return fmt.Errorf("http listen and serve, hostport=%s, err=%w", conf.Hostport, err)

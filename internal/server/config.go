@@ -1,5 +1,5 @@
 package server
 
 type Config struct {
-	Hostport string
+	Hostport string `env:"ADDRESS"`
 }
