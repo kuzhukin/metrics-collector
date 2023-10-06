@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
 
 	"github.com/caarlos0/env/v6"
 	"github.com/kuzhukin/metrics-collector/internal/agent"
@@ -26,7 +27,16 @@ func run() error {
 		return fmt.Errorf("make config, err=%w", err)
 	}
 
-	return agent.Run(config)
+	sigs := make(chan os.Signal, 1)
+
+	metricsAgent := agent.StartNew(config)
+
+	sig := <-sigs
+
+	fmt.Printf("Stop metrics agent by signal=%v\n", sig)
+	metricsAgent.Stop()
+
+	return nil
 }
 
 func makeConfig() (agent.Config, error) {

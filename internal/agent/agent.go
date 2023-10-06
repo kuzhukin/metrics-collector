@@ -5,9 +5,19 @@ import (
 	"github.com/kuzhukin/metrics-collector/internal/agent/reporter"
 )
 
-func Run(config Config) error {
-	reporter := reporter.New("http://" + config.Hostport)
-	controller.New(reporter, config.PollInterval, config.ReportInterval).Start()
+type Agent struct {
+	ctrl *controller.Controller
+}
 
-	return nil
+func StartNew(config Config) *Agent {
+	reporter := reporter.New("http://" + config.Hostport)
+	agent := Agent{ctrl: controller.New(reporter, config.PollInterval, config.ReportInterval)}
+
+	go agent.ctrl.Start()
+
+	return &agent
+}
+
+func (a *Agent) Stop() {
+	a.ctrl.Stop()
 }
