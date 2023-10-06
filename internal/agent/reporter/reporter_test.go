@@ -38,7 +38,5 @@ func TestReporter(t *testing.T) {
 
 	reporter.Report(gagugeMetrics, countersMetrics)
 
-	for idx := range expectedRequests {
-		require.Equal(t, expectedRequests[idx], requests[idx])
-	}
+	require.ElementsMatch(t, expectedRequests, requests)
 }
