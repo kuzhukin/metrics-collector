@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
 	"github.com/kuzhukin/metrics-collector/internal/agent/reporter/mockreporter"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -14,10 +14,7 @@ const reportInterval = 10
 const pollingInterval = 2
 
 func TestControllerPolling(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockReporter := mockreporter.NewMockReporter(ctrl)
+	mockReporter := mockreporter.NewReporter(t)
 	controller := New(mockReporter, pollingInterval, reportInterval)
 	require.Len(t, controller.gaugeMetrics, 0)
 
@@ -41,10 +38,7 @@ func TestControllerPolling(t *testing.T) {
 }
 
 func TestControllerReporting(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockReporter := mockreporter.NewMockReporter(ctrl)
+	mockReporter := mockreporter.NewReporter(t)
 	controller := New(mockReporter, pollingInterval, reportInterval)
 	require.Len(t, controller.gaugeMetrics, 0)
 
@@ -56,7 +50,7 @@ func TestControllerReporting(t *testing.T) {
 	// waiting without reports
 	time.Sleep(time.Second * reportInterval / 2)
 
-	mockReporter.EXPECT().Report(gomock.Any(), gomock.Any())
+	mockReporter.On("Report", mock.Anything, mock.Anything)
 
 	// waiting without reports
 	time.Sleep(time.Second * reportInterval)

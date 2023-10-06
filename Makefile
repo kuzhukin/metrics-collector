@@ -40,5 +40,5 @@ lint:
 	$(LINTER) --version
 	$(LINTER) cache clean && $(LINTER) run
 
-genmock:
+generate:
 	go generate ./...

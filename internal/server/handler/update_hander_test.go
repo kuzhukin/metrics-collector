@@ -24,11 +24,8 @@ var fakeMetric = &metric.Metric{
 }
 
 func TestBadMethod(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockStorage := mockstorage.NewMockStorage(ctrl)
-	mockParser := mockparser.NewMockRequestParser(ctrl)
+	mockStorage := mockstorage.NewStorage(t)
+	mockParser := mockparser.NewRequestParser(t)
 
 	handler := NewUpdateHandler(mockStorage, mockParser)
 
@@ -40,19 +37,15 @@ func TestBadMethod(t *testing.T) {
 }
 
 func TestSuccessUpload(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockStorage := mockstorage.NewMockStorage(ctrl)
-	mockParser := mockparser.NewMockRequestParser(ctrl)
-
+	mockParser := mockparser.NewRequestParser(t)
+	mockStorage := mockstorage.NewStorage(t)
 	handler := NewUpdateHandler(mockStorage, mockParser)
 
 	r := httptest.NewRequest(http.MethodPost, fakeURLPath, nil)
 	w := httptest.NewRecorder()
 
-	mockParser.EXPECT().Parse(r).Return(fakeMetric, nil)
-	mockStorage.EXPECT().Update(fakeMetric).Return(nil)
+	mockParser.On("Parse", r).Return(fakeMetric, nil)
+	mockStorage.On("Update", fakeMetric).Return(nil)
 
 	handler.ServeHTTP(w, r)
 
@@ -61,12 +54,8 @@ func TestSuccessUpload(t *testing.T) {
 }
 
 func TestParserErrorToStatusCodes(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockStorage := mockstorage.NewMockStorage(ctrl)
-	mockParser := mockparser.NewMockRequestParser(ctrl)
-
+	mockStorage := mockstorage.NewStorage(t)
+	mockParser := mockparser.NewRequestParser(t)
 	handler := NewUpdateHandler(mockStorage, mockParser)
 
 	tests := []struct {
@@ -101,7 +90,7 @@ func TestParserErrorToStatusCodes(t *testing.T) {
 			r := httptest.NewRequest(http.MethodPost, fakeURLPath, nil)
 			w := httptest.NewRecorder()
 
-			mockParser.EXPECT().Parse(r).Return(nil, test.parserError)
+			mockParser.On("Parse", r).Return(nil, test.parserError).Once()
 			handler.ServeHTTP(w, r)
 			require.Equal(t, test.expectedCode, w.Code)
 		})
@@ -112,16 +101,16 @@ func TestStorageErrorToStatusCodes(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockStorage := mockstorage.NewMockStorage(ctrl)
-	mockParser := mockparser.NewMockRequestParser(ctrl)
+	mockStorage := mockstorage.NewStorage(t)
+	mockParser := mockparser.NewRequestParser(t)
 
 	handler := NewUpdateHandler(mockStorage, mockParser)
 
 	r := httptest.NewRequest(http.MethodPost, fakeURLPath, nil)
 	w := httptest.NewRecorder()
 
-	mockParser.EXPECT().Parse(r).Return(fakeMetric, nil)
-	mockStorage.EXPECT().Update(fakeMetric).Return(errors.New("update error"))
+	mockParser.On("Parse", r).Return(fakeMetric, nil)
+	mockStorage.On("Update", fakeMetric).Return(errors.New("update error"))
 	handler.ServeHTTP(w, r)
 	require.Equal(t, http.StatusInternalServerError, w.Code)
 }
