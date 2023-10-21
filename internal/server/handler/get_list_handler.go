@@ -1,11 +1,11 @@
 package handler
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/kuzhukin/metrics-collector/internal/server/codec"
 	"github.com/kuzhukin/metrics-collector/internal/server/endpoint"
+	. "github.com/kuzhukin/metrics-collector/internal/server/log"
 	"github.com/kuzhukin/metrics-collector/internal/server/storage"
 )
 
@@ -22,10 +22,8 @@ func NewGetListHandler(storage storage.Storage) *GetListHandler {
 }
 
 func (u *GetListHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	fmt.Printf("Get list handler calling, request=%s\n", r.URL.Path)
-
 	if r.Method != http.MethodGet {
-		fmt.Printf("Endpoint %s supports only GET method\n", endpoint.ValueEndpoint)
+		Logger.Warnf("Endpoint %s supports only GET method", endpoint.ValueEndpoint)
 		w.WriteHeader(http.StatusMethodNotAllowed)
 
 		return
@@ -38,6 +36,6 @@ func (u *GetListHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	decoded := codec.DecodeMetricsList(metrics)
 	_, err := w.Write([]byte(decoded))
 	if err != nil {
-		fmt.Printf("Write string, err=%s\n", err)
+		Logger.Errorf("Write data to response, err=%s", err)
 	}
 }

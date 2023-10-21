@@ -1,7 +1,16 @@
 package endpoint
 
+/*
+	kind:
+	 - gauge: float metric
+	 - counter: integer metric with accumulating
+*/
+
 const (
-	RootEndpoint   = "/"
+	// GET: returning all metrics in html
+	RootEndpoint = "/"
+	// POST: write metric on server
 	UpdateEndpoint = "/update/{kind}/{name}/{value}"
-	ValueEndpoint  = "/value/{kind}/{name}"
+	// GET: returning metric value
+	ValueEndpoint = "/value/{kind}/{name}"
 )
