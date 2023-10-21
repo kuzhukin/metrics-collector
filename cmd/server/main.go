@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	"github.com/caarlos0/env/v6"
+	"github.com/kuzhukin/metrics-collector/internal/log"
 	"github.com/kuzhukin/metrics-collector/internal/server"
 )
 
@@ -20,6 +21,10 @@ func main() {
 }
 
 func run() error {
+	defer func() {
+		_ = log.Logger.Sync()
+	}()
+
 	config, err := makeConfig()
 	if err != nil {
 		return fmt.Errorf("make config, err=%w", err)
@@ -32,12 +37,12 @@ func run() error {
 
 	select {
 	case sig := <-sigs:
-		fmt.Printf("Stop server by signal=%v\n", sig)
+		log.Logger.Infof("Stop server by signal=%v\n", sig)
 		if err := srvr.Stop(); err != nil {
 			return fmt.Errorf("stop server err=%s", err)
 		}
 	case <-srvr.Wait():
-		fmt.Println("Server stopped")
+		log.Logger.Info("Server stopped")
 	}
 
 	return nil

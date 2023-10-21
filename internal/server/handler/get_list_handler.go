@@ -3,9 +3,9 @@ package handler
 import (
 	"net/http"
 
+	"github.com/kuzhukin/metrics-collector/internal/log"
 	"github.com/kuzhukin/metrics-collector/internal/server/codec"
 	"github.com/kuzhukin/metrics-collector/internal/server/endpoint"
-	. "github.com/kuzhukin/metrics-collector/internal/server/log"
 	"github.com/kuzhukin/metrics-collector/internal/server/storage"
 )
 
@@ -23,7 +23,7 @@ func NewGetListHandler(storage storage.Storage) *GetListHandler {
 
 func (u *GetListHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		Logger.Warnf("Endpoint %s supports only GET method", endpoint.ValueEndpoint)
+		log.Logger.Warnf("Endpoint %s supports only GET method", endpoint.ValueEndpoint)
 		w.WriteHeader(http.StatusMethodNotAllowed)
 
 		return
@@ -36,6 +36,6 @@ func (u *GetListHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	decoded := codec.DecodeMetricsList(metrics)
 	_, err := w.Write([]byte(decoded))
 	if err != nil {
-		Logger.Errorf("Write data to response, err=%s", err)
+		log.Logger.Errorf("Write data to response, err=%s", err)
 	}
 }

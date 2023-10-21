@@ -3,9 +3,9 @@ package handler
 import (
 	"net/http"
 
+	"github.com/kuzhukin/metrics-collector/internal/log"
 	"github.com/kuzhukin/metrics-collector/internal/server/codec"
 	"github.com/kuzhukin/metrics-collector/internal/server/endpoint"
-	. "github.com/kuzhukin/metrics-collector/internal/server/log"
 	"github.com/kuzhukin/metrics-collector/internal/server/parser"
 	"github.com/kuzhukin/metrics-collector/internal/server/storage"
 )
@@ -26,7 +26,7 @@ func NewValueHandler(storage storage.Storage, parser parser.RequestParser) *Valu
 
 func (u *ValueHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		Logger.Warnf("Endpoint %s supports only GET method\n", endpoint.ValueEndpoint)
+		log.Logger.Warnf("Endpoint %s supports only GET method\n", endpoint.ValueEndpoint)
 		w.WriteHeader(http.StatusMethodNotAllowed)
 
 		return
@@ -34,7 +34,7 @@ func (u *ValueHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	metric, err := u.parser.Parse(r)
 	if err != nil {
-		Logger.Warnf("Parse request path=%s, err=%s\n", r.URL.Path, err)
+		log.Logger.Warnf("Parse request path=%s, err=%s\n", r.URL.Path, err)
 		w.WriteHeader(http.StatusBadRequest)
 
 		return
@@ -42,7 +42,7 @@ func (u *ValueHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	metric, err = u.storage.Get(metric.Kind, metric.Name)
 	if err != nil {
-		Logger.Warnf("Metrics=%v get err=%s\n", metric, err)
+		log.Logger.Warnf("Metrics=%v get err=%s\n", metric, err)
 		w.WriteHeader(http.StatusNotFound)
 
 		return
@@ -54,6 +54,6 @@ func (u *ValueHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	decodedValue := codec.DecodeValue(metric)
 	_, err = w.Write([]byte(decodedValue))
 	if err != nil {
-		Logger.Errorf("Write string, err=%s\n", err)
+		log.Logger.Errorf("Write string, err=%s\n", err)
 	}
 }

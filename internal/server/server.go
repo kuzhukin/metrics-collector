@@ -5,9 +5,9 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/kuzhukin/metrics-collector/internal/log"
 	"github.com/kuzhukin/metrics-collector/internal/server/endpoint"
 	"github.com/kuzhukin/metrics-collector/internal/server/handler"
-	. "github.com/kuzhukin/metrics-collector/internal/server/log"
 	"github.com/kuzhukin/metrics-collector/internal/server/parser"
 	"github.com/kuzhukin/metrics-collector/internal/server/storage/memorystorage"
 )
@@ -32,29 +32,26 @@ func StartNew(config Config) *MetricServer {
 	server := &MetricServer{
 		srvr: http.Server{
 			Addr:    config.Hostport,
-			Handler: LoggingHTTPHandler(router),
+			Handler: log.LoggingHTTPHandler(router),
 		},
 		wait: make(chan struct{}),
 	}
 
 	go func() {
 		defer close(server.wait)
-		defer func() {
-			_ = Logger.Sync()
-		}()
 
 		if err := server.srvr.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			Logger.Errorf("Http listen and serve, address=%s, err=%s\n", server.srvr.Addr, err)
+			log.Logger.Errorf("Http listen and serve, address=%s, err=%s\n", server.srvr.Addr, err)
 		}
 	}()
 
-	Logger.Infof("Server started hostport=%v", config.Hostport)
+	log.Logger.Infof("Server started hostport=%v", config.Hostport)
 
 	return server
 }
 
 func (s *MetricServer) Stop() error {
-	Logger.Infof("Server stopped")
+	log.Logger.Infof("Server stopped")
 	return s.srvr.Shutdown(context.Background())
 }
 

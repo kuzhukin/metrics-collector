@@ -2,10 +2,10 @@ package reporter
 
 import (
 	"bytes"
-	"fmt"
 	"net/http"
 	"strconv"
 
+	"github.com/kuzhukin/metrics-collector/internal/log"
 	"github.com/kuzhukin/metrics-collector/internal/server/metric"
 )
 
@@ -37,7 +37,7 @@ func (r *reporterImpl) reportGauge(gaugeMetrics map[string]float64) {
 		request := makeUpdateRequest(r.URL, metric.Gauge, name, encodedValue)
 
 		if err := doReport(request); err != nil {
-			fmt.Printf("Do gauge metric report=%s, err=%s\n", request, err)
+			log.Logger.Warnf("Do gauge metric report=%s, err=%s\n", request, err)
 		}
 	}
 }
@@ -48,7 +48,7 @@ func (r *reporterImpl) reportCounter(counterMetrics map[string]int64) {
 		request := makeUpdateRequest(r.URL, metric.Counter, name, encodedValue)
 
 		if err := doReport(request); err != nil {
-			fmt.Printf("Do counters metric report=%s, err=%s\n", request, err)
+			log.Logger.Warnf("Do counters metric report=%s, err=%s\n", request, err)
 		}
 	}
 }
@@ -63,7 +63,7 @@ func doReport(request string) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		fmt.Printf("request=%s was failed with statusCode=%d\n", request, resp.StatusCode)
+		log.Logger.Warnf("request=%s was failed with statusCode=%d\n", request, resp.StatusCode)
 	}
 
 	return nil

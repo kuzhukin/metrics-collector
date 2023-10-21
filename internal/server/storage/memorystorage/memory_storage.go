@@ -2,8 +2,8 @@ package memorystorage
 
 import (
 	"errors"
-	"fmt"
 
+	"github.com/kuzhukin/metrics-collector/internal/log"
 	"github.com/kuzhukin/metrics-collector/internal/server/metric"
 	"github.com/kuzhukin/metrics-collector/internal/server/storage"
 )
@@ -77,7 +77,8 @@ func addMetricsToList[T float64 | int64](metrics map[string]T, kind metric.Kind,
 	for name, valT := range metrics {
 		val, err := metric.NewValueByKind(kind, valT)
 		if err != nil {
-			fmt.Printf("new value by kind=%s, err=%s", kind, err)
+			log.Logger.Errorf("new value by kind=%s, err=%s", kind, err)
+			continue
 		}
 
 		list = append(list, metric.NewMetric(kind, name, val))
