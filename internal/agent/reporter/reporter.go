@@ -11,7 +11,7 @@ import (
 
 const updateEndpoint = "/update/"
 
-//go:generate mockery --name=Reporter --outpkg=mockreporter --output=mockreporter
+//go:generate mockery --name=Reporter --filename=reporter.go --outpkg=mockreporter --output=mockreporter
 type Reporter interface {
 	Report(gaugeMetrics map[string]float64, counterMetrics map[string]int64)
 }
