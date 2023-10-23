@@ -2,11 +2,11 @@ package reporter
 
 import (
 	"bytes"
+	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/kuzhukin/metrics-collector/internal/log"
-	"github.com/kuzhukin/metrics-collector/internal/server/metric"
+	"github.com/kuzhukin/metrics-collector/internal/transport"
 )
 
 const updateEndpoint = "/update/"
@@ -17,45 +17,52 @@ type Reporter interface {
 }
 
 type reporterImpl struct {
-	URL string
+	updateURL string
 }
 
-func New(URL string) Reporter {
+func New(host string) Reporter {
 	return &reporterImpl{
-		URL: URL,
+		updateURL: makeUpdateURL(host),
 	}
 }
 
 func (r *reporterImpl) Report(gaugeMetrics map[string]float64, counterMetrics map[string]int64) {
-	r.reportGauge(gaugeMetrics)
-	r.reportCounter(counterMetrics)
+	r.reportGauges(gaugeMetrics)
+	r.reportCounters(counterMetrics)
 }
 
-func (r *reporterImpl) reportGauge(gaugeMetrics map[string]float64) {
+func (r *reporterImpl) reportGauges(gaugeMetrics map[string]float64) {
 	for name, value := range gaugeMetrics {
-		encodedValue := strconv.FormatFloat(value, 'G', -1, 64)
-		request := makeUpdateRequest(r.URL, metric.Gauge, name, encodedValue)
-
-		if err := doReport(request); err != nil {
-			log.Logger.Warnf("Do gauge metric report=%s, err=%s\n", request, err)
+		if err := reportMetric(r.updateURL, name, value); err != nil {
+			log.Logger.Warnf("report metric=%v, err=%s", name, err)
 		}
 	}
 }
 
-func (r *reporterImpl) reportCounter(counterMetrics map[string]int64) {
+func (r *reporterImpl) reportCounters(counterMetrics map[string]int64) {
 	for name, value := range counterMetrics {
-		encodedValue := strconv.FormatInt(value, 10)
-		request := makeUpdateRequest(r.URL, metric.Counter, name, encodedValue)
-
-		if err := doReport(request); err != nil {
-			log.Logger.Warnf("Do counters metric report=%s, err=%s\n", request, err)
+		if err := reportMetric(r.updateURL, name, value); err != nil {
+			log.Logger.Warnf("report metric=%v, err=%s", name, err)
 		}
 	}
 }
 
-func doReport(request string) error {
-	body := bytes.NewBufferString("")
-	resp, err := http.Post(request, "text/plain", body)
+func reportMetric[T int64 | float64](URL string, id string, value T) error {
+	data, err := transport.Serialize(id, value)
+	if err != nil {
+		return fmt.Errorf("metric serializa err=%s", err)
+	}
+
+	if err := doReport(URL, data); err != nil {
+		return fmt.Errorf("do report, err=%w", err)
+	}
+
+	return nil
+}
+
+func doReport(URL string, data []byte) error {
+	body := bytes.NewBuffer(data)
+	resp, err := http.Post(URL, "application/json", body)
 	if err != nil {
 		return err
 	}
@@ -63,12 +70,12 @@ func doReport(request string) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		log.Logger.Warnf("request=%s was failed with statusCode=%d\n", request, resp.StatusCode)
+		log.Logger.Warnf("metrics report was failed with statusCode=%d", resp.StatusCode)
 	}
 
 	return nil
 }
 
-func makeUpdateRequest(URL string, kind metric.Kind, name string, value string) string {
-	return URL + updateEndpoint + kind + "/" + name + "/" + value
+func makeUpdateURL(host string) string {
+	return host + updateEndpoint
 }
