@@ -49,6 +49,9 @@ func (c *Controller) loop() {
 	reportTicker := time.NewTicker(time.Second * time.Duration(c.reportInterval))
 	defer reportTicker.Stop()
 
+	c.collectMetrics()
+	c.reporter.Report(c.gaugeMetrics, c.counterMetrics)
+
 	for {
 		select {
 		case <-pollingTicker.C:

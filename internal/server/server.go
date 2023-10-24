@@ -22,13 +22,15 @@ func StartNew(config Config) *MetricServer {
 
 	router := chi.NewRouter()
 	listHandler := handler.NewGetListHandler(storage)
-	updateHandler := handler.NewUpdateHandler(storage, parser.NewUpdateRequestParser())
-	valueHandler := handler.NewValueHandler(storage, parser.NewValueRequestParser())
+	updateHandler := handler.NewUpdateHandler(storage, parser.New())
+	// valueHandler := handler.NewValueHandler(storage, parser.NewValueRequestParser())
+	valueHandler := handler.NewValueHandler(storage, parser.New())
 
 	router.Handle(endpoint.RootEndpoint, listHandler)
 	router.Handle(endpoint.UpdateEndpointJSON, updateHandler)
 	router.Handle(endpoint.UpdateEndpoint, updateHandler)
 	router.Handle(endpoint.ValueEndpoint, valueHandler)
+	router.Handle(endpoint.ValueEndpointJSON, valueHandler)
 
 	server := &MetricServer{
 		srvr: http.Server{

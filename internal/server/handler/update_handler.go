@@ -27,7 +27,7 @@ func NewUpdateHandler(storage storage.Storage, parser parser.RequestParser) *Upd
 
 func (u *UpdateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		log.Logger.Warnf("Endpoint %s supports only POST method\n", endpoint.UpdateEndpoint)
+		log.Logger.Infof("Endpoint %s supports only POST method", endpoint.UpdateEndpoint)
 		w.WriteHeader(http.StatusMethodNotAllowed)
 
 		return
@@ -36,16 +36,16 @@ func (u *UpdateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	metric, err := u.parser.Parse(r)
 	if err != nil {
 		if errors.Is(err, parser.ErrMetricNameIsNotFound) {
-			log.Logger.Warnf("Metric name isn't found path=%s, err=%s\n", r.URL.Path, err)
+			log.Logger.Warnf("Metric wasn't found name path=%s, err=%s", r.URL.Path, err)
 			w.WriteHeader(http.StatusNotFound)
 		} else if errors.Is(err, codec.ErrBadMetricValue) {
-			log.Logger.Warnf("Bad metric value path=%s, err=%s\n", r.URL.Path, err)
+			log.Logger.Warnf("Bad metric value path=%s, err=%s", r.URL.Path, err)
 			w.WriteHeader(http.StatusBadRequest)
 		} else if errors.Is(err, parser.ErrBadMetricKind) {
-			log.Logger.Warnf("Bad metric kind path=%s, err=%s\n", r.URL.Path, err)
+			log.Logger.Warnf("Bad metric kind path=%s, err=%s", r.URL.Path, err)
 			w.WriteHeader(http.StatusBadRequest)
 		} else {
-			log.Logger.Warnf("Parse request path=%s, err=%s\n", r.URL.Path, err)
+			log.Logger.Warnf("Parse request path=%s, err=%s", r.URL.Path, err)
 			w.WriteHeader(http.StatusBadRequest)
 		}
 

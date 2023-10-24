@@ -24,8 +24,8 @@ func NewValueHandler(storage storage.Storage, parser parser.RequestParser) *Valu
 }
 
 func (u *ValueHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		log.Logger.Warnf("Endpoint %s supports only GET method\n", endpoint.ValueEndpoint)
+	if r.Method != http.MethodGet && r.Method != http.MethodPost {
+		log.Logger.Infof("Endpoint %s supports only GET method", endpoint.ValueEndpoint)
 		w.WriteHeader(http.StatusMethodNotAllowed)
 
 		return
@@ -33,22 +33,22 @@ func (u *ValueHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	metric, err := u.parser.Parse(r)
 	if err != nil {
-		log.Logger.Warnf("Parse request path=%s, err=%s\n", r.URL.Path, err)
+		log.Logger.Warnf("Parse request path=%s, err=%s", r.URL.Path, err)
 		w.WriteHeader(http.StatusBadRequest)
 
 		return
 	}
 
-	metric, err = u.storage.Get(metric.Kind, metric.Name)
+	storedMetric, err := u.storage.Get(metric.Kind, metric.Name)
 	if err != nil {
-		log.Logger.Warnf("Metrics=%v get err=%s\n", metric, err)
+		log.Logger.Errorf("storage get kind=%s, name=%s err=%s", metric.Kind, metric.Name, err)
 		w.WriteHeader(http.StatusNotFound)
 
 		return
 	}
 
-	if err := response(w, r, metric); err != nil {
-		log.Logger.Warnf("response metric=%v, err=%s", *metric, err)
+	if err := response(w, r, storedMetric); err != nil {
+		log.Logger.Warnf("response metric=%v, err=%s", *storedMetric, err)
 		http.Error(w, "internal error", http.StatusInternalServerError)
 	}
 }

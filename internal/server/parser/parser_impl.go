@@ -16,7 +16,7 @@ var _ RequestParser = &updateRequestParserImpl{}
 type updateRequestParserImpl struct {
 }
 
-func NewUpdateRequestParser() RequestParser {
+func New() RequestParser {
 	return &updateRequestParserImpl{}
 }
 
@@ -42,9 +42,13 @@ func parseMetricByURLParams(r *http.Request) (*metric.Metric, error) {
 		return nil, err
 	}
 
-	v, err := codec.Encode(kind, value)
-	if err != nil {
-		return nil, err
+	var v metric.Value
+	if value != "" {
+		var err error
+		v, err = codec.Encode(kind, value)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return &metric.Metric{Kind: kind, Name: name, Value: v}, nil

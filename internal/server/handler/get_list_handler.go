@@ -23,7 +23,7 @@ func NewGetListHandler(storage storage.Storage) *GetListHandler {
 
 func (u *GetListHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		log.Logger.Warnf("Endpoint %s supports only GET method", endpoint.ValueEndpoint)
+		log.Logger.Infof("Endpoint %s supports only GET method", endpoint.ValueEndpoint)
 		w.WriteHeader(http.StatusMethodNotAllowed)
 
 		return
