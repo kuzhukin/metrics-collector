@@ -21,21 +21,25 @@ func TestReporter(t *testing.T) {
 		"Counter1": 20,
 	}
 
-	expectedMetrics := []transport.Metric{
+	v1 := 1.21
+	v2 := 0.000000000001
+	d1 := int64(20)
+
+	expectedMetrics := []transport.Metrics{
 		{
 			ID:    "Gauge1",
 			Type:  "gauge",
-			Value: 1.21,
+			Value: &v1,
 		},
 		{
 			ID:    "Gauge2",
 			Type:  "gauge",
-			Value: 0.000000000001,
+			Value: &v2,
 		},
 		{
 			ID:    "Counter1",
 			Type:  "counter",
-			Delta: 20,
+			Delta: &d1,
 		},
 	}
 

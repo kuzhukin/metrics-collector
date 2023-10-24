@@ -36,7 +36,7 @@ func (u *UpdateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	metric, err := u.parser.Parse(r)
 	if err != nil {
 		if errors.Is(err, parser.ErrMetricNameIsNotFound) {
-			log.Logger.Warnf("Metric wasn't found name path=%s, err=%s", r.URL.Path, err)
+			log.Logger.Warnf("Metric wasn't found path=%s, err=%s", r.URL.Path, err)
 			w.WriteHeader(http.StatusNotFound)
 		} else if errors.Is(err, codec.ErrBadMetricValue) {
 			log.Logger.Warnf("Bad metric value path=%s, err=%s", r.URL.Path, err)

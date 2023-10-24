@@ -66,7 +66,7 @@ func parseMetricByJSONBody(r *http.Request) (*metric.Metric, error) {
 	}
 
 	if err := checkName(metricMsg.ID); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("check name metric=%v, data=%v, err=%w", metricMsg, data, err)
 	}
 
 	if err := checkKind(metricMsg.Type); err != nil {
@@ -76,9 +76,13 @@ func parseMetricByJSONBody(r *http.Request) (*metric.Metric, error) {
 	var v metric.Value
 	switch metricMsg.Type {
 	case metric.Gauge:
-		v = metric.GaugeValue(metricMsg.Value)
+		if metricMsg.Value != nil {
+			v = metric.GaugeValue(*metricMsg.Value)
+		}
 	case metric.Counter:
-		v = metric.CounterValue(metricMsg.Delta)
+		if metricMsg.Delta != nil {
+			v = metric.CounterValue(*metricMsg.Delta)
+		}
 	}
 
 	return &metric.Metric{Kind: metricMsg.Type, Name: metricMsg.ID, Value: v}, nil

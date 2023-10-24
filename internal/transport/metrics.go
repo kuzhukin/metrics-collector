@@ -9,21 +9,23 @@ import (
 
 var ErrUnknownMetricType error = errors.New("unknown metric type")
 
-type Metric struct {
-	ID    string  `json:"id"`              // имя метрики
-	Type  string  `json:"type"`            // параметр, принимающий значение gauge или counter
-	Delta int64   `json:"delta,omitempty"` // значение метрики в случае передачи counter
-	Value float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
+type Metrics struct {
+	ID    string   `json:"id"`              // имя метрики
+	Type  string   `json:"type"`            // параметр, принимающий значение gauge или counter
+	Delta *int64   `json:"delta,omitempty"` // значение метрики в случае передачи counter
+	Value *float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
 }
 
 func Serialize(id string, kind metric.Kind, value interface{}) ([]byte, error) {
-	m := Metric{ID: id, Type: kind}
+	m := Metrics{ID: id, Type: kind}
 
 	switch kind {
 	case metric.Counter:
-		m.Delta = value.(int64)
+		v := value.(int64)
+		m.Delta = &v
 	case metric.Gauge:
-		m.Value = value.(float64)
+		v := value.(float64)
+		m.Value = &v
 	default:
 		return nil, ErrUnknownMetricType
 	}
@@ -31,8 +33,8 @@ func Serialize(id string, kind metric.Kind, value interface{}) ([]byte, error) {
 	return json.Marshal(m)
 }
 
-func Desirialize(data []byte) (*Metric, error) {
-	metric := &Metric{}
+func Desirialize(data []byte) (*Metrics, error) {
+	metric := &Metrics{}
 	err := json.Unmarshal(data, metric)
 
 	return metric, err

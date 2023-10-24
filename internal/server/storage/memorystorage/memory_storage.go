@@ -2,6 +2,7 @@ package memorystorage
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/kuzhukin/metrics-collector/internal/log"
 	"github.com/kuzhukin/metrics-collector/internal/server/metric"
@@ -45,7 +46,7 @@ func (s *memoryStorage) Get(kind metric.Kind, name string) (*metric.Metric, erro
 	case metric.Gauge:
 		gauge, ok := s.gaugeMetrics.Get(name)
 		if !ok {
-			return nil, ErrUnknownMetric
+			return nil, fmt.Errorf("name=%s, err=%w", name, ErrUnknownMetric)
 		}
 
 		return metric.NewMetric(kind, name, metric.GaugeValue(gauge)), nil
@@ -53,7 +54,7 @@ func (s *memoryStorage) Get(kind metric.Kind, name string) (*metric.Metric, erro
 	case metric.Counter:
 		counter, ok := s.counterMetrics.Get(name)
 		if !ok {
-			return nil, ErrUnknownMetric
+			return nil, fmt.Errorf("name=%s, err=%w", name, ErrUnknownMetric)
 		}
 
 		return metric.NewMetric(kind, name, metric.CounterValue(counter)), nil

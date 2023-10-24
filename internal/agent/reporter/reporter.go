@@ -2,8 +2,10 @@ package reporter
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/kuzhukin/metrics-collector/internal/log"
 	"github.com/kuzhukin/metrics-collector/internal/server/metric"
@@ -62,16 +64,37 @@ func reportMetric[T int64 | float64](URL string, id string, kind metric.Kind, va
 }
 
 func doReport(URL string, data []byte) error {
+	const maxTryingsNum = 5
+	trying := 0
+
+	var joinedError error
+
+	for {
+		if err := doOneReport(URL, data); err != nil {
+			if trying < maxTryingsNum {
+				trying++
+				joinedError = errors.Join(joinedError, err)
+				time.Sleep(time.Millisecond * 100)
+				continue
+			}
+
+			return fmt.Errorf("http post URL=%v, err=%w", URL, joinedError)
+		}
+
+		return nil
+	}
+}
+
+func doOneReport(URL string, data []byte) error {
 	body := bytes.NewBuffer(data)
 	resp, err := http.Post(URL, "application/json", body)
 	if err != nil {
 		return err
 	}
-
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		log.Logger.Warnf("metrics report was failed with statusCode=%d", resp.StatusCode)
+		return fmt.Errorf("metrics report was failed with statusCode=%d", resp.StatusCode)
 	}
 
 	return nil
