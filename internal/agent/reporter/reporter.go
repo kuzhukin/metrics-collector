@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/kuzhukin/metrics-collector/internal/log"
+	"github.com/kuzhukin/metrics-collector/internal/server/metric"
 	"github.com/kuzhukin/metrics-collector/internal/transport"
 )
 
@@ -33,7 +34,7 @@ func (r *reporterImpl) Report(gaugeMetrics map[string]float64, counterMetrics ma
 
 func (r *reporterImpl) reportGauges(gaugeMetrics map[string]float64) {
 	for name, value := range gaugeMetrics {
-		if err := reportMetric(r.updateURL, name, value); err != nil {
+		if err := reportMetric(r.updateURL, name, metric.Gauge, value); err != nil {
 			log.Logger.Warnf("report metric=%v, err=%s", name, err)
 		}
 	}
@@ -41,14 +42,14 @@ func (r *reporterImpl) reportGauges(gaugeMetrics map[string]float64) {
 
 func (r *reporterImpl) reportCounters(counterMetrics map[string]int64) {
 	for name, value := range counterMetrics {
-		if err := reportMetric(r.updateURL, name, value); err != nil {
+		if err := reportMetric(r.updateURL, name, metric.Counter, value); err != nil {
 			log.Logger.Warnf("report metric=%v, err=%s", name, err)
 		}
 	}
 }
 
-func reportMetric[T int64 | float64](URL string, id string, value T) error {
-	data, err := transport.Serialize(id, value)
+func reportMetric[T int64 | float64](URL string, id string, kind metric.Kind, value T) error {
+	data, err := transport.Serialize(id, kind, value)
 	if err != nil {
 		return fmt.Errorf("metric serializa err=%s", err)
 	}

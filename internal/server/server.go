@@ -26,6 +26,7 @@ func StartNew(config Config) *MetricServer {
 	valueHandler := handler.NewValueHandler(storage, parser.NewValueRequestParser())
 
 	router.Handle(endpoint.RootEndpoint, listHandler)
+	router.Handle(endpoint.UpdateEndpointJSON, updateHandler)
 	router.Handle(endpoint.UpdateEndpoint, updateHandler)
 	router.Handle(endpoint.ValueEndpoint, valueHandler)
 

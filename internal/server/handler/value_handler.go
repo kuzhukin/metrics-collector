@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/kuzhukin/metrics-collector/internal/log"
-	"github.com/kuzhukin/metrics-collector/internal/server/codec"
 	"github.com/kuzhukin/metrics-collector/internal/server/endpoint"
 	"github.com/kuzhukin/metrics-collector/internal/server/parser"
 	"github.com/kuzhukin/metrics-collector/internal/server/storage"
@@ -48,12 +47,8 @@ func (u *ValueHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "text/plain")
-	w.WriteHeader(http.StatusOK)
-
-	decodedValue := codec.DecodeValue(metric)
-	_, err = w.Write([]byte(decodedValue))
-	if err != nil {
-		log.Logger.Errorf("Write string, err=%s\n", err)
+	if err := response(w, r, metric); err != nil {
+		log.Logger.Warnf("response metric=%v, err=%s", *metric, err)
+		http.Error(w, "internal error", http.StatusInternalServerError)
 	}
 }

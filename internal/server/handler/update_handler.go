@@ -59,6 +59,8 @@ func (u *UpdateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "text/plain")
-	w.WriteHeader(http.StatusOK)
+	if err := response(w, r, metric); err != nil {
+		log.Logger.Warnf("response metric=%v, err=%s", *metric, err)
+		http.Error(w, "internal error", http.StatusInternalServerError)
+	}
 }

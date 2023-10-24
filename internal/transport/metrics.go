@@ -3,6 +3,8 @@ package transport
 import (
 	"encoding/json"
 	"errors"
+
+	"github.com/kuzhukin/metrics-collector/internal/server/metric"
 )
 
 var ErrUnknownMetricType error = errors.New("unknown metric type")
@@ -14,21 +16,19 @@ type Metric struct {
 	Value float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
 }
 
-func Serialize(id string, value interface{}) ([]byte, error) {
-	metric := Metric{ID: id}
+func Serialize(id string, kind metric.Kind, value interface{}) ([]byte, error) {
+	m := Metric{ID: id, Type: kind}
 
-	switch v := value.(type) {
-	case int64:
-		metric.Type = "counter"
-		metric.Delta = v
-	case float64:
-		metric.Type = "gauge"
-		metric.Value = v
+	switch kind {
+	case metric.Counter:
+		m.Delta = value.(int64)
+	case metric.Gauge:
+		m.Value = value.(float64)
 	default:
 		return nil, ErrUnknownMetricType
 	}
 
-	return json.Marshal(metric)
+	return json.Marshal(m)
 }
 
 func Desirialize(data []byte) (*Metric, error) {
