@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/kuzhukin/metrics-collector/internal/log"
+	"github.com/kuzhukin/metrics-collector/internal/server/config"
 	"github.com/kuzhukin/metrics-collector/internal/server/endpoint"
 	"github.com/kuzhukin/metrics-collector/internal/server/handler"
 	"github.com/kuzhukin/metrics-collector/internal/server/handler/middleware"
@@ -20,7 +21,7 @@ type MetricServer struct {
 }
 
 func StartNew() (*MetricServer, error) {
-	config, err := makeConfig()
+	config, err := config.MakeConfig()
 	if err != nil {
 		return nil, fmt.Errorf("make config, err=%w", err)
 	}

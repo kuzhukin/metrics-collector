@@ -26,7 +26,7 @@ func TestReporter(t *testing.T) {
 	v2 := 0.000000000001
 	d1 := int64(20)
 
-	expectedMetrics := []transport.Metrics{
+	expectedMetrics := []transport.Metric{
 		{
 			ID:    "Gauge1",
 			Type:  "gauge",
