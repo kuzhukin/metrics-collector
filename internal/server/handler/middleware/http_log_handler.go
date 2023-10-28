@@ -1,8 +1,10 @@
-package log
+package middleware
 
 import (
 	"net/http"
 	"time"
+
+	"github.com/kuzhukin/metrics-collector/internal/log"
 )
 
 var _ http.ResponseWriter = &loggingResponseWriter{}
@@ -43,7 +45,7 @@ func LoggingHTTPHandler(h http.Handler) http.Handler {
 		lw := newLoggingResponseWriter(w)
 		duration := lw.doRequestWithTimer(h, r)
 
-		Logger.Infof("uri=%v, method=%v, status=%v, size=%v, duration=%v",
+		log.Logger.Infof("uri=%v, method=%v, status=%v, size=%v, duration=%v",
 			r.RequestURI, r.Method, lw.status, lw.size, duration)
 	}
 

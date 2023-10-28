@@ -8,6 +8,7 @@ import (
 	"github.com/kuzhukin/metrics-collector/internal/log"
 	"github.com/kuzhukin/metrics-collector/internal/server/endpoint"
 	"github.com/kuzhukin/metrics-collector/internal/server/handler"
+	"github.com/kuzhukin/metrics-collector/internal/server/handler/middleware"
 	"github.com/kuzhukin/metrics-collector/internal/server/parser"
 	"github.com/kuzhukin/metrics-collector/internal/server/storage/memorystorage"
 )
@@ -32,10 +33,12 @@ func StartNew(config Config) *MetricServer {
 	router.Handle(endpoint.ValueEndpoint, valueHandler)
 	router.Handle(endpoint.ValueEndpointJSON, valueHandler)
 
+	handler := addMiddlewares(router)
+
 	server := &MetricServer{
 		srvr: http.Server{
 			Addr:    config.Hostport,
-			Handler: log.LoggingHTTPHandler(router),
+			Handler: handler,
 		},
 		wait: make(chan struct{}),
 	}
@@ -51,6 +54,13 @@ func StartNew(config Config) *MetricServer {
 	log.Logger.Infof("Server started hostport=%v", config.Hostport)
 
 	return server
+}
+
+func addMiddlewares(handler http.Handler) http.Handler {
+	// handler = middleware.CompressingHTTPHandler(handler)
+	handler = middleware.LoggingHTTPHandler(handler)
+
+	return handler
 }
 
 func (s *MetricServer) Stop() error {
