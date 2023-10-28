@@ -1,7 +1,8 @@
 package reporter
 
 import (
-	"io"
+	"bytes"
+	"compress/gzip"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -51,10 +52,15 @@ func TestReporter(t *testing.T) {
 		require.Equal(t, http.MethodPost, r.Method)
 		require.Equal(t, updateEndpoint, r.URL.Path)
 
-		data, err := io.ReadAll(r.Body)
+		reader, err := gzip.NewReader(r.Body)
+		require.NoError(t, err)
+		defer reader.Close()
+
+		var b bytes.Buffer
+		_, err = b.ReadFrom(reader)
 		require.NoError(t, err)
 
-		m, err := transport.Desirialize(data)
+		m, err := transport.Desirialize(b.Bytes())
 		require.NoError(t, err)
 
 		require.Equal(t, expectedMetrics[requestNumber-1], *m)

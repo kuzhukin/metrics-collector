@@ -57,7 +57,7 @@ func StartNew(config Config) *MetricServer {
 }
 
 func addMiddlewares(handler http.Handler) http.Handler {
-	// handler = middleware.CompressingHTTPHandler(handler)
+	handler = middleware.CompressingHTTPHandler(handler)
 	handler = middleware.LoggingHTTPHandler(handler)
 
 	return handler

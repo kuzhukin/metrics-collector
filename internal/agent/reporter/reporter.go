@@ -2,6 +2,7 @@ package reporter
 
 import (
 	"bytes"
+	"compress/gzip"
 	"errors"
 	"fmt"
 	"net/http"
@@ -64,42 +65,71 @@ func reportMetric[T int64 | float64](URL string, id string, kind metric.Kind, va
 }
 
 func doReport(URL string, data []byte) error {
-	const maxTryingsNum = 5
-	trying := 0
 
-	var joinedError error
-
-	for {
-		if err := doOneReport(URL, data); err != nil {
-			if trying < maxTryingsNum {
-				trying++
-				joinedError = errors.Join(joinedError, err)
-				time.Sleep(time.Millisecond * 100)
-				continue
-			}
-
-			return fmt.Errorf("http post URL=%v, err=%w", URL, joinedError)
-		}
-
-		return nil
+	compressedData, err := compressData(data)
+	if err != nil {
+		return fmt.Errorf("compress data err=%w", err)
 	}
+
+	request, err := makeUpdateRequest(URL, compressedData)
+	if err != nil {
+		return fmt.Errorf("make update request err=%w", err)
+	}
+
+	return doRequest(request)
 }
 
-func doOneReport(URL string, data []byte) error {
-	body := bytes.NewBuffer(data)
-	resp, err := http.Post(URL, "application/json", body)
+func makeUpdateRequest(URL string, data []byte) (*http.Request, error) {
+	req, err := http.NewRequest(http.MethodPost, URL, bytes.NewReader(data))
 	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("metrics report was failed with statusCode=%d", resp.StatusCode)
+		return nil, err
 	}
 
-	return nil
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Encoding", "gzip")
+
+	return req, nil
+}
+
+func doRequest(req *http.Request) error {
+	const maxTryingsNum = 5
+	var joinedError error
+
+	for trying := 0; trying < maxTryingsNum; trying++ {
+		if resp, err := http.DefaultClient.Do(req); err != nil {
+			if trying < maxTryingsNum {
+				joinedError = errors.Join(joinedError, err)
+				time.Sleep(time.Millisecond * 100)
+			}
+		} else {
+			defer resp.Body.Close()
+			if resp.StatusCode != http.StatusOK {
+				return fmt.Errorf("metrics update request was failed with statusCode=%d", resp.StatusCode)
+			}
+
+			return nil
+		}
+	}
+
+	return errors.New("request trying limit exceeded")
 }
 
 func makeUpdateURL(host string) string {
 	return host + updateEndpoint
+}
+
+func compressData(data []byte) ([]byte, error) {
+	b := &bytes.Buffer{}
+	w := gzip.NewWriter(b)
+	_, err := w.Write(data)
+	if err != nil {
+		return nil, err
+	}
+
+	err = w.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	return b.Bytes(), nil
 }
