@@ -1,18 +1,14 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
 
-	"github.com/caarlos0/env/v6"
 	"github.com/kuzhukin/metrics-collector/internal/log"
 	"github.com/kuzhukin/metrics-collector/internal/server"
 )
-
-const hostportDefault = "localhost:8080"
 
 func main() {
 	if err := run(); err != nil {
@@ -25,15 +21,13 @@ func run() error {
 		_ = log.Logger.Sync()
 	}()
 
-	config, err := makeConfig()
-	if err != nil {
-		return fmt.Errorf("make config, err=%w", err)
-	}
-
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGTERM, syscall.SIGINT)
 
-	srvr := server.StartNew(config)
+	srvr, err := server.StartNew()
+	if err != nil {
+		fmt.Errorf("server start err=%w", err)
+	}
 
 	select {
 	case sig := <-sigs:
@@ -46,16 +40,4 @@ func run() error {
 	}
 
 	return nil
-}
-func makeConfig() (server.Config, error) {
-	config := server.Config{}
-
-	flag.StringVar(&config.Hostport, "a", hostportDefault, "Set ip:port for server")
-	flag.Parse()
-
-	if err := env.Parse(&config); err != nil {
-		return config, fmt.Errorf("parse env err=%w", err)
-	}
-
-	return config, nil
 }

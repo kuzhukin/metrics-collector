@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -18,7 +19,12 @@ type MetricServer struct {
 	wait chan struct{}
 }
 
-func StartNew(config Config) *MetricServer {
+func StartNew() (*MetricServer, error) {
+	config, err := makeConfig()
+	if err != nil {
+		return nil, fmt.Errorf("make config, err=%w", err)
+	}
+
 	storage := memorystorage.New()
 
 	router := chi.NewRouter()
@@ -53,7 +59,7 @@ func StartNew(config Config) *MetricServer {
 
 	log.Logger.Infof("Server started hostport=%v", config.Hostport)
 
-	return server
+	return server, nil
 }
 
 func (s *MetricServer) Stop() error {
