@@ -15,8 +15,8 @@ var ErrUnknownKind = errors.New("unknown metric kind")
 var _ storage.Storage = &MemoryStorage{}
 
 type MemoryStorage struct {
-	GaugeMetrics   SyncStorage[float64]
-	CounterMetrics SyncStorage[int64]
+	GaugeMetrics   *SyncStorage[float64]
+	CounterMetrics *SyncStorage[int64]
 }
 
 func New() storage.Storage {

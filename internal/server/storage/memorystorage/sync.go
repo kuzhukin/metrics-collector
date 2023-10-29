@@ -2,8 +2,8 @@ package memorystorage
 
 import "sync"
 
-func NewSyncStorage[T int64 | float64]() SyncStorage[T] {
-	return SyncStorage[T]{
+func NewSyncStorage[T int64 | float64]() *SyncStorage[T] {
+	return &SyncStorage[T]{
 		storage: make(map[string]T),
 	}
 }

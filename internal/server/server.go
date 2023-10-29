@@ -12,6 +12,8 @@ import (
 	"github.com/kuzhukin/metrics-collector/internal/server/handler"
 	"github.com/kuzhukin/metrics-collector/internal/server/handler/middleware"
 	"github.com/kuzhukin/metrics-collector/internal/server/parser"
+	"github.com/kuzhukin/metrics-collector/internal/server/storage"
+	"github.com/kuzhukin/metrics-collector/internal/server/storage/filestorage"
 	"github.com/kuzhukin/metrics-collector/internal/server/storage/memorystorage"
 )
 
@@ -26,7 +28,10 @@ func StartNew() (*MetricServer, error) {
 		return nil, fmt.Errorf("make config, err=%w", err)
 	}
 
-	storage := memorystorage.New()
+	storage, err := newStorage(config.Storage)
+	if err != nil {
+		return nil, err
+	}
 
 	router := chi.NewRouter()
 	listHandler := handler.NewGetListHandler(storage)
@@ -61,6 +66,22 @@ func StartNew() (*MetricServer, error) {
 	log.Logger.Infof("Server started hostport=%v", config.Hostport)
 
 	return server, nil
+}
+
+func newStorage(config config.StorageConfig) (storage.Storage, error) {
+	var storage storage.Storage
+	var err error
+
+	if config.FilePath != "" {
+		storage, err = filestorage.New(config)
+		if err != nil {
+			return nil, fmt.Errorf("new file storage, err=%w", err)
+		}
+	} else {
+		storage = memorystorage.New()
+	}
+
+	return storage, nil
 }
 
 func (s *MetricServer) Stop() error {

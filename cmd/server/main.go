@@ -26,7 +26,7 @@ func run() error {
 
 	srvr, err := server.StartNew()
 	if err != nil {
-		fmt.Errorf("server start err=%w", err)
+		return fmt.Errorf("server start err=%w", err)
 	}
 
 	select {

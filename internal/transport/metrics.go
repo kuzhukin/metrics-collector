@@ -16,8 +16,8 @@ type Metric struct {
 	Value *float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
 }
 
-func Serialize(id string, kind metric.Kind, value interface{}) ([]byte, error) {
-	m := Metric{ID: id, Type: kind}
+func New(id string, kind metric.Kind, value interface{}) (*Metric, error) {
+	m := &Metric{ID: id, Type: kind}
 
 	switch kind {
 	case metric.Counter:
@@ -30,7 +30,19 @@ func Serialize(id string, kind metric.Kind, value interface{}) ([]byte, error) {
 		return nil, ErrUnknownMetricType
 	}
 
+	return m, nil
+}
+
+func (m *Metric) Serialize() ([]byte, error) {
 	return json.Marshal(m)
+}
+func Serialize(id string, kind metric.Kind, value interface{}) ([]byte, error) {
+	m, err := New(id, kind, value)
+	if err != nil {
+		return nil, err
+	}
+
+	return m.Serialize()
 }
 
 func Desirialize(data []byte) (*Metric, error) {
