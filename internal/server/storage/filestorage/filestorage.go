@@ -22,7 +22,6 @@ type FileStorage struct {
 
 	filepath string
 	interval time.Duration
-	done     chan struct{}
 }
 
 func New(config config.StorageConfig) (storage.Storage, error) {
@@ -70,19 +69,15 @@ func (s *FileStorage) List() []*metric.Metric {
 }
 
 func (s *FileStorage) startSyncer() {
-	s.done = make(chan struct{})
-
 	go func() {
 		sync := time.NewTicker(s.interval)
 		defer sync.Stop()
 
-		select {
-		case <-sync.C:
+		for {
+			<-sync.C
 			if err := s.sync(); err != nil {
 				log.Logger.Errorf("sync metrics err=%w", err)
 			}
-		case <-s.done:
-			return
 		}
 	}()
 }
@@ -104,7 +99,7 @@ func (s *FileStorage) restore() error {
 		return fmt.Errorf("unmarshal err=%w", err)
 	}
 
-	gauges, counters := converFromTransportMetrics(metrics)
+	gauges, counters := convertFromTransportMetrics(metrics)
 
 	s.memoryStorage.CounterMetrics = counters
 	s.memoryStorage.GaugeMetrics = gauges
@@ -154,7 +149,7 @@ func (s *FileStorage) serialize() ([]byte, error) {
 }
 
 func convertToTransportMetrics[T int64 | float64](metrics map[string]T, kind metric.Kind) ([]*transport.Metric, error) {
-	transpotMetrics := make([]*transport.Metric, 0, len(metrics))
+	transportMetrics := make([]*transport.Metric, 0, len(metrics))
 
 	for id, value := range metrics {
 		m, err := transport.New(id, kind, value)
@@ -162,13 +157,13 @@ func convertToTransportMetrics[T int64 | float64](metrics map[string]T, kind met
 			return nil, fmt.Errorf("serializa id=%v kind=%v value=%v err=%w", id, kind, value, err)
 		}
 
-		transpotMetrics = append(transpotMetrics, m)
+		transportMetrics = append(transportMetrics, m)
 	}
 
-	return transpotMetrics, nil
+	return transportMetrics, nil
 }
 
-func converFromTransportMetrics(
+func convertFromTransportMetrics(
 	metrics []*transport.Metric,
 ) (
 	*memorystorage.SyncStorage[float64],
