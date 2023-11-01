@@ -2,43 +2,43 @@ package memorystorage
 
 import "sync"
 
-func newSyncMemoryStorage[T int64 | float64]() syncMemoryStorage[T] {
-	return syncMemoryStorage[T]{
+func NewSyncStorage[T int64 | float64]() *SyncStorage[T] {
+	return &SyncStorage[T]{
 		storage: make(map[string]T),
 	}
 }
 
-type syncMemoryStorage[T int64 | float64] struct {
-	sync.Mutex
+type SyncStorage[T int64 | float64] struct {
+	sync.RWMutex
 	storage map[string]T
 }
 
-func (s *syncMemoryStorage[T]) Write(k string, value T) {
+func (s *SyncStorage[T]) Write(k string, value T) {
 	s.Lock()
 	defer s.Unlock()
 
 	s.storage[k] = value
 }
 
-func (s *syncMemoryStorage[T]) Sum(k string, value T) {
+func (s *SyncStorage[T]) Sum(k string, value T) {
 	s.Lock()
 	defer s.Unlock()
 
 	s.storage[k] += value
 }
 
-func (s *syncMemoryStorage[T]) Get(k string) (T, bool) {
-	s.Lock()
-	defer s.Unlock()
+func (s *SyncStorage[T]) Get(k string) (T, bool) {
+	s.RLock()
+	defer s.RUnlock()
 
 	v, ok := s.storage[k]
 
 	return v, ok
 }
 
-func (s *syncMemoryStorage[T]) GetAll() map[string]T {
-	s.Lock()
-	defer s.Unlock()
+func (s *SyncStorage[T]) GetAll() map[string]T {
+	s.RLock()
+	defer s.RUnlock()
 
 	copy := make(map[string]T, len(s.storage))
 
@@ -47,4 +47,11 @@ func (s *syncMemoryStorage[T]) GetAll() map[string]T {
 	}
 
 	return copy
+}
+
+func (s *SyncStorage[T]) SetAll(m map[string]T) {
+	s.Lock()
+	defer s.Unlock()
+
+	s.storage = m
 }

@@ -1,10 +1,9 @@
 package handler
 
 import (
-	"fmt"
 	"net/http"
 
-	"github.com/kuzhukin/metrics-collector/internal/server/codec"
+	"github.com/kuzhukin/metrics-collector/internal/log"
 	"github.com/kuzhukin/metrics-collector/internal/server/endpoint"
 	"github.com/kuzhukin/metrics-collector/internal/server/parser"
 	"github.com/kuzhukin/metrics-collector/internal/server/storage"
@@ -25,10 +24,8 @@ func NewValueHandler(storage storage.Storage, parser parser.RequestParser) *Valu
 }
 
 func (u *ValueHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	fmt.Printf("Value handler calling, request=%s\n", r.URL.Path)
-
-	if r.Method != http.MethodGet {
-		fmt.Printf("Endpoint %s supports only GET method\n", endpoint.ValueEndpoint)
+	if r.Method != http.MethodGet && r.Method != http.MethodPost {
+		log.Logger.Infof("Endpoint %s supports only GET method", endpoint.ValueEndpoint)
 		w.WriteHeader(http.StatusMethodNotAllowed)
 
 		return
@@ -36,26 +33,22 @@ func (u *ValueHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	metric, err := u.parser.Parse(r)
 	if err != nil {
-		fmt.Printf("Parse request path=%s, err=%s\n", r.URL.Path, err)
+		log.Logger.Warnf("Parse request path=%s, err=%s", r.URL.Path, err)
 		w.WriteHeader(http.StatusBadRequest)
 
 		return
 	}
 
-	metric, err = u.storage.Get(metric.Kind, metric.Name)
+	storedMetric, err := u.storage.Get(metric.Kind, metric.Name)
 	if err != nil {
-		fmt.Printf("Metrics=%v get err=%s\n", metric, err)
+		log.Logger.Errorf("storage get kind=%s, name=%s err=%s", metric.Kind, metric.Name, err)
 		w.WriteHeader(http.StatusNotFound)
 
 		return
 	}
 
-	w.Header().Set("Content-Type", "text/plain")
-	w.WriteHeader(http.StatusOK)
-
-	decodedValue := codec.DecodeValue(metric)
-	_, err = w.Write([]byte(decodedValue))
-	if err != nil {
-		fmt.Printf("Write string, err=%s\n", err)
+	if err := response(w, r, storedMetric); err != nil {
+		log.Logger.Warnf("response metric=%v, err=%s", *storedMetric, err)
+		http.Error(w, "internal error", http.StatusInternalServerError)
 	}
 }

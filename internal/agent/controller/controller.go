@@ -1,12 +1,12 @@
 package controller
 
 import (
-	"fmt"
 	"math/rand"
 	"runtime"
 	"time"
 
 	"github.com/kuzhukin/metrics-collector/internal/agent/reporter"
+	"github.com/kuzhukin/metrics-collector/internal/log"
 )
 
 type Controller struct {
@@ -33,6 +33,7 @@ func New(reporter reporter.Reporter, pollingInterval, reportInterval int) *Contr
 }
 
 func (c *Controller) Start() {
+	log.Logger.Infof("Controller started")
 	c.loop()
 }
 
@@ -41,7 +42,6 @@ func (c *Controller) Stop() {
 }
 
 func (c *Controller) loop() {
-	fmt.Printf("Controller started\n")
 
 	pollingTicker := time.NewTicker(time.Second * time.Duration(c.polingInterval))
 	defer pollingTicker.Stop()
@@ -56,7 +56,7 @@ func (c *Controller) loop() {
 		case <-reportTicker.C:
 			c.reporter.Report(c.gaugeMetrics, c.counterMetrics)
 		case <-c.done:
-			fmt.Printf("Controller stopped\n")
+			log.Logger.Infof("Controller stopped\n")
 
 			return
 		}

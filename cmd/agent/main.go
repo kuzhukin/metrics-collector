@@ -7,6 +7,7 @@ import (
 
 	"github.com/caarlos0/env/v6"
 	"github.com/kuzhukin/metrics-collector/internal/agent"
+	"github.com/kuzhukin/metrics-collector/internal/log"
 )
 
 const (
@@ -33,7 +34,7 @@ func run() error {
 
 	sig := <-sigs
 
-	fmt.Printf("Stop metrics agent by signal=%v\n", sig)
+	log.Logger.Infof("Stop metrics agent by signal=%v\n", sig)
 	metricsAgent.Stop()
 
 	return nil
