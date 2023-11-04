@@ -46,6 +46,7 @@ func TestReporter(t *testing.T) {
 
 	requestNumber := 0
 	wait := make(chan struct{})
+	realMetrics := make([]transport.Metric, 0)
 
 	srvr := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requestNumber++
@@ -63,7 +64,7 @@ func TestReporter(t *testing.T) {
 		m, err := transport.Desirialize(b.Bytes())
 		require.NoError(t, err)
 
-		require.Equal(t, expectedMetrics[requestNumber-1], *m)
+		realMetrics = append(realMetrics, *m)
 
 		if requestNumber == (len(gagugeMetrics) + len(countersMetrics)) {
 			close(wait)
@@ -77,6 +78,7 @@ func TestReporter(t *testing.T) {
 
 	select {
 	case <-wait:
+		require.ElementsMatch(t, realMetrics, expectedMetrics)
 	case <-time.After(time.Second * 1):
 		require.Fail(t, "timeout")
 	}
