@@ -22,4 +22,7 @@ const (
 	ValueEndpointJSON = "/value/"
 	// GET: returning metric value
 	ValueEndpoint = "/value/{kind}/{name}"
+
+	// GET: check database connection
+	PingEndpoint = "/ping"
 )

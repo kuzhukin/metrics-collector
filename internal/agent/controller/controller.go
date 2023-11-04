@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/kuzhukin/metrics-collector/internal/agent/reporter"
-	"github.com/kuzhukin/metrics-collector/internal/log"
+	"github.com/kuzhukin/metrics-collector/internal/zlog"
 )
 
 type Controller struct {
@@ -33,7 +33,7 @@ func New(reporter reporter.Reporter, pollingInterval, reportInterval int) *Contr
 }
 
 func (c *Controller) Start() {
-	log.Logger.Infof("Controller started")
+	zlog.Logger.Infof("Controller started")
 	c.loop()
 }
 
@@ -56,7 +56,7 @@ func (c *Controller) loop() {
 		case <-reportTicker.C:
 			c.reporter.Report(c.gaugeMetrics, c.counterMetrics)
 		case <-c.done:
-			log.Logger.Infof("Controller stopped\n")
+			zlog.Logger.Infof("Controller stopped\n")
 
 			return
 		}

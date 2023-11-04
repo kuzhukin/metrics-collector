@@ -7,12 +7,12 @@ import (
 	"os"
 	"time"
 
-	"github.com/kuzhukin/metrics-collector/internal/log"
 	"github.com/kuzhukin/metrics-collector/internal/server/config"
 	"github.com/kuzhukin/metrics-collector/internal/server/metric"
 	"github.com/kuzhukin/metrics-collector/internal/server/storage"
 	"github.com/kuzhukin/metrics-collector/internal/server/storage/memorystorage"
 	"github.com/kuzhukin/metrics-collector/internal/transport"
+	"github.com/kuzhukin/metrics-collector/internal/zlog"
 )
 
 var _ storage.Storage = &FileStorage{}
@@ -24,7 +24,7 @@ type FileStorage struct {
 	interval time.Duration
 }
 
-func New(config config.StorageConfig) (storage.Storage, error) {
+func New(config config.StorageConfig) (*FileStorage, error) {
 	storage := &FileStorage{
 		memoryStorage: memorystorage.MemoryStorage{
 			GaugeMetrics:   memorystorage.NewSyncStorage[float64](),
@@ -37,7 +37,7 @@ func New(config config.StorageConfig) (storage.Storage, error) {
 
 	if config.Restore {
 		if err := storage.restore(); err != nil {
-			log.Logger.Warnf("Restore metrics from file=%v err=%s", storage.filepath, err)
+			zlog.Logger.Warnf("Restore metrics from file=%v err=%s", storage.filepath, err)
 		}
 	}
 
@@ -76,7 +76,7 @@ func (s *FileStorage) startSyncer() {
 		for {
 			<-sync.C
 			if err := s.sync(); err != nil {
-				log.Logger.Errorf("sync metrics err=%w", err)
+				zlog.Logger.Errorf("sync metrics err=%w", err)
 			}
 		}
 	}()
@@ -148,6 +148,10 @@ func (s *FileStorage) serialize() ([]byte, error) {
 	return data, nil
 }
 
+func (s *FileStorage) Stop() error {
+	return nil
+}
+
 func convertToTransportMetrics[T int64 | float64](metrics map[string]T, kind metric.Kind) ([]*transport.Metric, error) {
 	transportMetrics := make([]*transport.Metric, 0, len(metrics))
 
@@ -179,7 +183,7 @@ func convertFromTransportMetrics(
 		case metric.Counter:
 			counters[m.ID] = *m.Delta
 		default:
-			log.Logger.Warnf("Unknown metric kind=%v", m.Type)
+			zlog.Logger.Warnf("Unknown metric kind=%v", m.Type)
 		}
 	}
 

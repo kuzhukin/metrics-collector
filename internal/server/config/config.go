@@ -20,9 +20,10 @@ type Config struct {
 }
 
 type StorageConfig struct {
-	Interval int    `env:"STORE_INTERVAL"`
-	FilePath string `env:"FILE_STORAGE_PATH"`
-	Restore  bool   `env:"RESTORE"`
+	Interval    int    `env:"STORE_INTERVAL"`
+	FilePath    string `env:"FILE_STORAGE_PATH"`
+	Restore     bool   `env:"RESTORE"`
+	DatabaseDSN string `env:"DATABASE_DSN"`
 }
 
 func MakeConfig() (Config, error) {
@@ -32,6 +33,7 @@ func MakeConfig() (Config, error) {
 	flag.IntVar(&config.Storage.Interval, "i", storeIntervalDefault, "Interval in secs for storing metrics to persistent storage")
 	flag.StringVar(&config.Storage.FilePath, "f", fileStoragePathDefault, "Path of persistent storage")
 	flag.BoolVar(&config.Storage.Restore, "r", restoreDefault, "Enable downloading metrics from persistent storage on the start")
+	flag.StringVar(&config.Storage.DatabaseDSN, "d", "", "Database connection string")
 
 	flag.Parse()
 

@@ -8,9 +8,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/kuzhukin/metrics-collector/internal/log"
 	"github.com/kuzhukin/metrics-collector/internal/server/metric"
 	"github.com/kuzhukin/metrics-collector/internal/transport"
+	"github.com/kuzhukin/metrics-collector/internal/zlog"
 )
 
 const updateEndpoint = "/update/"
@@ -38,7 +38,7 @@ func (r *reporterImpl) Report(gaugeMetrics map[string]float64, counterMetrics ma
 func (r *reporterImpl) reportGauges(gaugeMetrics map[string]float64) {
 	for name, value := range gaugeMetrics {
 		if err := reportMetric(r.updateURL, name, metric.Gauge, value); err != nil {
-			log.Logger.Warnf("report metric=%v, err=%s", name, err)
+			zlog.Logger.Warnf("report metric=%v, err=%s", name, err)
 		}
 	}
 }
@@ -46,7 +46,7 @@ func (r *reporterImpl) reportGauges(gaugeMetrics map[string]float64) {
 func (r *reporterImpl) reportCounters(counterMetrics map[string]int64) {
 	for name, value := range counterMetrics {
 		if err := reportMetric(r.updateURL, name, metric.Counter, value); err != nil {
-			log.Logger.Warnf("report metric=%v, err=%s", name, err)
+			zlog.Logger.Warnf("report metric=%v, err=%s", name, err)
 		}
 	}
 }

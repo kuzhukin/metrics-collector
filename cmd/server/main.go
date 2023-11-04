@@ -6,8 +6,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/kuzhukin/metrics-collector/internal/log"
 	"github.com/kuzhukin/metrics-collector/internal/server"
+	"github.com/kuzhukin/metrics-collector/internal/zlog"
 )
 
 func main() {
@@ -18,7 +18,7 @@ func main() {
 
 func run() error {
 	defer func() {
-		_ = log.Logger.Sync()
+		_ = zlog.Logger.Sync()
 	}()
 
 	sigs := make(chan os.Signal, 1)
@@ -31,12 +31,12 @@ func run() error {
 
 	select {
 	case sig := <-sigs:
-		log.Logger.Infof("Stop server by signal=%v\n", sig)
+		zlog.Logger.Infof("Stop server by signal=%v\n", sig)
 		if err := srvr.Stop(); err != nil {
 			return fmt.Errorf("stop server err=%s", err)
 		}
 	case <-srvr.Wait():
-		log.Logger.Info("Server stopped")
+		zlog.Logger.Info("Server stopped")
 	}
 
 	return nil

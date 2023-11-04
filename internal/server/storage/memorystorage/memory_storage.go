@@ -4,9 +4,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/kuzhukin/metrics-collector/internal/log"
 	"github.com/kuzhukin/metrics-collector/internal/server/metric"
 	"github.com/kuzhukin/metrics-collector/internal/server/storage"
+	"github.com/kuzhukin/metrics-collector/internal/zlog"
 )
 
 var ErrUnknownMetric = errors.New("unknown metric name")
@@ -19,7 +19,7 @@ type MemoryStorage struct {
 	CounterMetrics *SyncStorage[int64]
 }
 
-func New() storage.Storage {
+func New() *MemoryStorage {
 	return &MemoryStorage{
 		GaugeMetrics:   NewSyncStorage[float64](),
 		CounterMetrics: NewSyncStorage[int64](),
@@ -74,11 +74,15 @@ func (s *MemoryStorage) List() []*metric.Metric {
 	return list
 }
 
+func (s *MemoryStorage) Stop() error {
+	return nil
+}
+
 func addMetricsToList[T float64 | int64](metrics map[string]T, kind metric.Kind, list []*metric.Metric) []*metric.Metric {
 	for name, valT := range metrics {
 		val, err := metric.NewValueByKind(kind, valT)
 		if err != nil {
-			log.Logger.Errorf("new value by kind=%s, err=%s", kind, err)
+			zlog.Logger.Errorf("new value by kind=%s, err=%s", kind, err)
 			continue
 		}
 
