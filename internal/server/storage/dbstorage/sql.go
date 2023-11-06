@@ -5,16 +5,14 @@ import (
 	"github.com/kuzhukin/metrics-collector/internal/server/storage"
 )
 
-const createGaugeMetricsTableQuery = `CREATE TABLE iF NOT EXISTS gauge_metrics (
-	"id" text,
-	"value" double precision,
-	PRIMARY KEY "id"
+const createGaugeMetricsTableQuery = `CREATE TABLE IF NOT EXISTS gauge_metrics (
+	id text PRIMARY KEY,
+	value double precision
 );`
 
-const createCounterMetricsTableQuery = `CREATE TABLE iF NOT EXISTS counter_metrics (
-	"id" text,
-	"value" bigint,
-	PRIMARY KEY "id"
+const createCounterMetricsTableQuery = `CREATE TABLE IF NOT EXISTS counter_metrics (
+	id text PRIMARY KEY,
+	value bigint
 );`
 
 func buildCreateMetricsTableQuery(kind metric.Kind) (string, error) {
@@ -28,11 +26,11 @@ func buildCreateMetricsTableQuery(kind metric.Kind) (string, error) {
 	}
 }
 
-const updateGaugeMetricQuery = `INSERT INTO gauge_metrics ("id", "value") VALUES ($1, $2) ` +
-	`ON CONFLICT ("id", "value") metrics.value = excluded.value;`
+const updateGaugeMetricQuery = `INSERT INTO gauge_metrics (id, value) VALUES ($1, $2) ` +
+	`ON CONFLICT (id) DO UPDATE SET value = excluded.value;`
 
-const updateCounterMetricQuery = `INSERT INTO counter_metrics ("id", "value") VALUES ($1, $2) ` +
-	`ON CONFLICT ("id", "value") metrics.value = metrics.value + excluded.value;`
+const updateCounterMetricQuery = `INSERT INTO counter_metrics (id, value) VALUES ($1, $2) ` +
+	`ON CONFLICT (id) DO UPDATE SET value = counter_metrics.value + excluded.value;`
 
 func buildUpdateQuery(m *metric.Metric) (string, []interface{}, error) {
 	switch m.Kind {
@@ -45,8 +43,8 @@ func buildUpdateQuery(m *metric.Metric) (string, []interface{}, error) {
 	}
 }
 
-const getGaugeMetricQuery = `SELECT name, value FROM gauge_metrics WHERE name = $1;`
-const getCounterMetricQuery = `SELECT name, value FROM counter_metrics WHERE name = $1;`
+const getGaugeMetricQuery = `SELECT id, value FROM gauge_metrics WHERE id = $1;`
+const getCounterMetricQuery = `SELECT id, value FROM counter_metrics WHERE id = $1;`
 
 func buildGetQuery(id string, kind metric.Kind) (string, []interface{}, error) {
 	switch kind {
