@@ -30,11 +30,17 @@ func (u *GetListHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "text/html")
+
+	metrics, err := u.storage.List()
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
 
-	metrics := u.storage.List()
 	decoded := codec.DecodeMetricsList(metrics)
-	_, err := w.Write([]byte(decoded))
+	_, err = w.Write([]byte(decoded))
 	if err != nil {
 		zlog.Logger.Errorf("Write data to response, err=%s", err)
 	}

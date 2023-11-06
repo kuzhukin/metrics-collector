@@ -64,7 +64,7 @@ func (s *FileStorage) Get(kind metric.Kind, name string) (*metric.Metric, error)
 	return s.memoryStorage.Get(kind, name)
 }
 
-func (s *FileStorage) List() []*metric.Metric {
+func (s *FileStorage) List() ([]*metric.Metric, error) {
 	return s.memoryStorage.List()
 }
 

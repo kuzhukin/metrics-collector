@@ -1,16 +1,12 @@
 package memorystorage
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/kuzhukin/metrics-collector/internal/server/metric"
 	"github.com/kuzhukin/metrics-collector/internal/server/storage"
 	"github.com/kuzhukin/metrics-collector/internal/zlog"
 )
-
-var ErrUnknownMetric = errors.New("unknown metric name")
-var ErrUnknownKind = errors.New("unknown metric kind")
 
 var _ storage.Storage = &MemoryStorage{}
 
@@ -37,7 +33,7 @@ func (s *MemoryStorage) Update(m *metric.Metric) error {
 
 		return nil
 	default:
-		return ErrUnknownKind
+		return storage.ErrUnknownKind
 	}
 }
 
@@ -46,7 +42,7 @@ func (s *MemoryStorage) Get(kind metric.Kind, name string) (*metric.Metric, erro
 	case metric.Gauge:
 		gauge, ok := s.GaugeMetrics.Get(name)
 		if !ok {
-			return nil, fmt.Errorf("name=%s, err=%w", name, ErrUnknownMetric)
+			return nil, fmt.Errorf("name=%s, err=%w", name, storage.ErrUnknownMetric)
 		}
 
 		return metric.NewMetric(kind, name, metric.GaugeValue(gauge)), nil
@@ -54,16 +50,16 @@ func (s *MemoryStorage) Get(kind metric.Kind, name string) (*metric.Metric, erro
 	case metric.Counter:
 		counter, ok := s.CounterMetrics.Get(name)
 		if !ok {
-			return nil, fmt.Errorf("name=%s, err=%w", name, ErrUnknownMetric)
+			return nil, fmt.Errorf("name=%s, err=%w", name, storage.ErrUnknownMetric)
 		}
 
 		return metric.NewMetric(kind, name, metric.CounterValue(counter)), nil
 	default:
-		return nil, ErrUnknownKind
+		return nil, storage.ErrUnknownKind
 	}
 }
 
-func (s *MemoryStorage) List() []*metric.Metric {
+func (s *MemoryStorage) List() ([]*metric.Metric, error) {
 	allGauges := s.GaugeMetrics.GetAll()
 	allCounters := s.CounterMetrics.GetAll()
 
@@ -71,7 +67,7 @@ func (s *MemoryStorage) List() []*metric.Metric {
 	list = addMetricsToList(allGauges, metric.Gauge, list)
 	list = addMetricsToList(allCounters, metric.Counter, list)
 
-	return list
+	return list, nil
 }
 
 func (s *MemoryStorage) Stop() error {

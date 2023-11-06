@@ -39,10 +39,14 @@ func (_m *Storage) Get(kind string, name string) (*metric.Metric, error) {
 }
 
 // List provides a mock function with given fields:
-func (_m *Storage) List() []*metric.Metric {
+func (_m *Storage) List() ([]*metric.Metric, error) {
 	ret := _m.Called()
 
 	var r0 []*metric.Metric
+	var r1 error
+	if rf, ok := ret.Get(0).(func() ([]*metric.Metric, error)); ok {
+		return rf()
+	}
 	if rf, ok := ret.Get(0).(func() []*metric.Metric); ok {
 		r0 = rf()
 	} else {
@@ -51,21 +55,13 @@ func (_m *Storage) List() []*metric.Metric {
 		}
 	}
 
-	return r0
-}
-
-// Stop provides a mock function with given fields:
-func (_m *Storage) Stop() error {
-	ret := _m.Called()
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func() error); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
 	} else {
-		r0 = ret.Error(0)
+		r1 = ret.Error(1)
 	}
 
-	return r0
+	return r0, r1
 }
 
 // Update provides a mock function with given fields: m

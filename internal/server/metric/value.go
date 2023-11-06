@@ -8,7 +8,7 @@ type Value interface {
 }
 
 type GaugeValue float64
-type CounterValue float64
+type CounterValue int64
 
 func (g GaugeValue) Gauge() float64 {
 	return float64(g)
