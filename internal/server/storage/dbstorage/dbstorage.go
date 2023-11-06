@@ -136,6 +136,10 @@ func (s *DBStorage) Get(kind metric.Kind, name string) (*metric.Metric, error) {
 		return parser(rows)
 	}
 
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
 	return nil, storage.ErrUnknownMetric
 }
 
@@ -183,6 +187,10 @@ func (s *DBStorage) getAll(kind metric.Kind) ([]*metric.Metric, error) {
 		}
 
 		metrics = append(metrics, m)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 
 	return metrics, nil
