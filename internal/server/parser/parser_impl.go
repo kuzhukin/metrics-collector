@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -11,21 +12,31 @@ import (
 	"github.com/kuzhukin/metrics-collector/internal/transport"
 )
 
-var _ RequestParser = &updateRequestParserImpl{}
+var _ RequestParser = &parserImpl{}
+var _ BatchRequestParser = &parserImpl{}
 
-type updateRequestParserImpl struct {
+type parserImpl struct {
 }
 
-func New() RequestParser {
-	return &updateRequestParserImpl{}
+func New() *parserImpl {
+	return &parserImpl{}
 }
 
-func (p *updateRequestParserImpl) Parse(r *http.Request) (*metric.Metric, error) {
+func (p *parserImpl) Parse(r *http.Request) (*metric.Metric, error) {
 	switch r.Header.Get("content-type") {
 	case "application/json":
 		return parseMetricByJSONBody(r)
 	default:
 		return parseMetricByURLParams(r)
+	}
+}
+
+func (p *parserImpl) BatchParse(r *http.Request) ([]*metric.Metric, error) {
+	switch r.Header.Get("content-type") {
+	case "application/json":
+		return parseBatchMetricByJSONBody(r)
+	default:
+		return nil, errors.New("incompatible content type for batch request")
 	}
 }
 
@@ -65,8 +76,45 @@ func parseMetricByJSONBody(r *http.Request) (*metric.Metric, error) {
 		return nil, fmt.Errorf("metric desirialization err=%w", err)
 	}
 
+	metric, err := parseMetricByJSONBodyImpl(metricMsg)
+	if err != nil {
+		return nil, fmt.Errorf("parse data=%v, err=%w", data, err)
+	}
+
+	return metric, nil
+}
+
+func parseBatchMetricByJSONBody(r *http.Request) ([]*metric.Metric, error) {
+	data, err := io.ReadAll(r.Body)
+	if err != nil {
+		return nil, fmt.Errorf("error reading body from request, err=%w", err)
+	}
+
+	batchMetric := transport.NewBatch()
+	if err := batchMetric.Deserialize(data); err != nil {
+		return nil, fmt.Errorf("batch metric desirialization err=%w", err)
+	}
+
+	metrics := make([]*metric.Metric, 0, batchMetric.Len())
+	err = batchMetric.Foreach(func(nextMetric *transport.Metric) error {
+		m, internalErr := parseMetricByJSONBodyImpl(nextMetric)
+		if internalErr != nil {
+			return fmt.Errorf("parse metric err=%w", err)
+		}
+
+		metrics = append(metrics, m)
+		return nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("parse batch data=%v, err=%w", data, err)
+	}
+
+	return metrics, nil
+}
+
+func parseMetricByJSONBodyImpl(metricMsg *transport.Metric) (*metric.Metric, error) {
 	if err := checkName(metricMsg.ID); err != nil {
-		return nil, fmt.Errorf("check name metric=%v, data=%v, err=%w", metricMsg, data, err)
+		return nil, fmt.Errorf("check name metric=%v, err=%w", metricMsg, err)
 	}
 
 	if err := checkKind(metricMsg.Type); err != nil {

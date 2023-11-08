@@ -60,6 +60,18 @@ func (s *FileStorage) Update(m *metric.Metric) error {
 	return s.sync()
 }
 
+func (s *FileStorage) BatchUpdate(metrics []*metric.Metric) error {
+	if err := s.memoryStorage.BatchUpdate(metrics); err != nil {
+		return err
+	}
+
+	if s.interval != 0 {
+		return nil
+	}
+
+	return s.sync()
+}
+
 func (s *FileStorage) Get(kind metric.Kind, name string) (*metric.Metric, error) {
 	return s.memoryStorage.Get(kind, name)
 }

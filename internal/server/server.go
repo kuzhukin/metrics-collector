@@ -48,10 +48,13 @@ func StartNew() (*MetricServer, error) {
 		storage = memorystorage.New()
 	}
 
+	requestsParser := parser.New()
+
 	listHandler := handler.NewGetListHandler(storage)
-	updateHandler := handler.NewUpdateHandler(storage, parser.New())
-	valueHandler := handler.NewValueHandler(storage, parser.New())
+	updateHandler := handler.NewUpdateHandler(storage, requestsParser)
+	valueHandler := handler.NewValueHandler(storage, requestsParser)
 	pingHandler := handler.NewPingHandler(dbStorage)
+	batchUpdateHandler := handler.NewBatchUpdateHandler(dbStorage, requestsParser)
 
 	router := chi.NewRouter()
 	router.Use(middleware.LoggingHTTPHandler)
@@ -63,6 +66,7 @@ func StartNew() (*MetricServer, error) {
 	router.Handle(endpoint.ValueEndpoint, valueHandler)
 	router.Handle(endpoint.ValueEndpointJSON, valueHandler)
 	router.Handle(endpoint.PingEndpoint, pingHandler)
+	router.Handle(endpoint.BatchUpdateEndpointJSON, batchUpdateHandler)
 
 	server := &MetricServer{
 		srvr: http.Server{

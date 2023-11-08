@@ -12,6 +12,20 @@ type Storage struct {
 	mock.Mock
 }
 
+// BatchUpdate provides a mock function with given fields: m
+func (_m *Storage) BatchUpdate(m []*metric.Metric) error {
+	ret := _m.Called(m)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func([]*metric.Metric) error); ok {
+		r0 = rf(m)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Get provides a mock function with given fields: kind, name
 func (_m *Storage) Get(kind string, name string) (*metric.Metric, error) {
 	ret := _m.Called(kind, name)

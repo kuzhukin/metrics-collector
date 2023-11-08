@@ -37,6 +37,16 @@ func (s *MemoryStorage) Update(m *metric.Metric) error {
 	}
 }
 
+func (s *MemoryStorage) BatchUpdate(metrics []*metric.Metric) error {
+	for _, m := range metrics {
+		if err := s.Update(m); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (s *MemoryStorage) Get(kind metric.Kind, name string) (*metric.Metric, error) {
 	switch kind {
 	case metric.Gauge:

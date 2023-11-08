@@ -112,6 +112,11 @@ func (s *DBStorage) Update(m *metric.Metric) error {
 	return nil
 }
 
+func (s *DBStorage) BatchUpdate(metrics []*metric.Metric) error {
+	// TODO:
+	return nil
+}
+
 func (s *DBStorage) Get(kind metric.Kind, name string) (*metric.Metric, error) {
 	query, args, err := buildGetQuery(name, kind)
 	if err != nil {
