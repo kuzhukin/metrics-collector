@@ -29,6 +29,20 @@ func StartNew() (*MetricServer, error) {
 		return nil, fmt.Errorf("make config, err=%w", err)
 	}
 
+	server, err := createServer(&config)
+	if err != nil {
+		return nil, fmt.Errorf("create server, err=%w", err)
+	}
+
+	server.startHTTPServer()
+
+	zlog.Logger.Infof("Server started hostport=%v", config.Hostport)
+
+	return server, nil
+}
+
+func createServer(config *config.Config) (*MetricServer, error) {
+	var err error
 	var storage storage.Storage
 	var dbStorage *dbstorage.DBStorage
 
@@ -68,22 +82,16 @@ func StartNew() (*MetricServer, error) {
 	router.Handle(endpoint.PingEndpoint, pingHandler)
 	router.Handle(endpoint.BatchUpdateEndpointJSON, batchUpdateHandler)
 
-	server := &MetricServer{
+	return &MetricServer{
 		srvr: http.Server{
 			Addr:    config.Hostport,
 			Handler: router,
 		},
 		wait: make(chan struct{}),
-	}
-
-	startHTTPServer(server)
-
-	zlog.Logger.Infof("Server started hostport=%v", config.Hostport)
-
-	return server, nil
+	}, nil
 }
 
-func startHTTPServer(srvr *MetricServer) {
+func (srvr *MetricServer) startHTTPServer() {
 	go func() {
 		defer close(srvr.wait)
 
