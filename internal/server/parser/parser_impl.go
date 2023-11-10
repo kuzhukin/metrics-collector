@@ -7,9 +7,8 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/kuzhukin/metrics-collector/internal/metric"
 	"github.com/kuzhukin/metrics-collector/internal/server/codec"
-	"github.com/kuzhukin/metrics-collector/internal/server/metric"
-	"github.com/kuzhukin/metrics-collector/internal/transport"
 )
 
 var _ RequestParser = &parserImpl{}
@@ -41,9 +40,9 @@ func (p *parserImpl) BatchParse(r *http.Request) ([]*metric.Metric, error) {
 }
 
 func parseMetricByURLParams(r *http.Request) (*metric.Metric, error) {
-	kind := chi.URLParam(r, "kind")
+	kind := metric.Kind(chi.URLParam(r, "kind"))
 	name := chi.URLParam(r, "name")
-	value := chi.URLParam(r, "value")
+	valueStr := chi.URLParam(r, "value")
 
 	if err := checkName(name); err != nil {
 		return nil, err
@@ -53,16 +52,19 @@ func parseMetricByURLParams(r *http.Request) (*metric.Metric, error) {
 		return nil, err
 	}
 
-	var v metric.Value
-	if value != "" {
-		var err error
-		v, err = codec.Encode(kind, value)
+	m := &metric.Metric{Type: kind, ID: name}
+
+	if valueStr != "" {
+		delta, value, err := codec.Encode(kind, valueStr)
 		if err != nil {
 			return nil, err
 		}
+
+		m.Delta = delta
+		m.Value = value
 	}
 
-	return &metric.Metric{Kind: kind, Name: name, Value: v}, nil
+	return m, nil
 }
 
 func parseMetricByJSONBody(r *http.Request) (*metric.Metric, error) {
@@ -71,7 +73,7 @@ func parseMetricByJSONBody(r *http.Request) (*metric.Metric, error) {
 		return nil, fmt.Errorf("error reading body from request, err=%w", err)
 	}
 
-	metricMsg, err := transport.Desirialize(data)
+	metricMsg, err := metric.Desirialize(data)
 	if err != nil {
 		return nil, fmt.Errorf("metric desirialization err=%w", err)
 	}
@@ -90,13 +92,13 @@ func parseBatchMetricByJSONBody(r *http.Request) ([]*metric.Metric, error) {
 		return nil, fmt.Errorf("error reading body from request, err=%w", err)
 	}
 
-	batchMetric := transport.NewBatch()
+	batchMetric := metric.NewBatch()
 	if err := batchMetric.Deserialize(data); err != nil {
 		return nil, fmt.Errorf("batch metric desirialization err=%w", err)
 	}
 
 	metrics := make([]*metric.Metric, 0, batchMetric.Len())
-	err = batchMetric.Foreach(func(nextMetric *transport.Metric) error {
+	err = batchMetric.Foreach(func(nextMetric *metric.Metric) error {
 		m, internalErr := parseMetricByJSONBodyImpl(nextMetric)
 		if internalErr != nil {
 			return fmt.Errorf("parse metric err=%w", err)
@@ -112,28 +114,16 @@ func parseBatchMetricByJSONBody(r *http.Request) ([]*metric.Metric, error) {
 	return metrics, nil
 }
 
-func parseMetricByJSONBodyImpl(metricMsg *transport.Metric) (*metric.Metric, error) {
-	if err := checkName(metricMsg.ID); err != nil {
-		return nil, fmt.Errorf("check name metric=%v, err=%w", metricMsg, err)
+func parseMetricByJSONBodyImpl(metric *metric.Metric) (*metric.Metric, error) {
+	if err := checkName(metric.ID); err != nil {
+		return nil, fmt.Errorf("check name metric=%v, err=%w", metric, err)
 	}
 
-	if err := checkKind(metricMsg.Type); err != nil {
+	if err := checkKind(metric.Type); err != nil {
 		return nil, err
 	}
 
-	var v metric.Value
-	switch metricMsg.Type {
-	case metric.Gauge:
-		if metricMsg.Value != nil {
-			v = metric.GaugeValue(*metricMsg.Value)
-		}
-	case metric.Counter:
-		if metricMsg.Delta != nil {
-			v = metric.CounterValue(*metricMsg.Delta)
-		}
-	}
-
-	return &metric.Metric{Kind: metricMsg.Type, Name: metricMsg.ID, Value: v}, nil
+	return metric, nil
 }
 
 func checkName(name string) error {

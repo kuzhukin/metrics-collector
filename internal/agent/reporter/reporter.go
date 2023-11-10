@@ -8,8 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/kuzhukin/metrics-collector/internal/server/metric"
-	"github.com/kuzhukin/metrics-collector/internal/transport"
+	"github.com/kuzhukin/metrics-collector/internal/metric"
 	"github.com/kuzhukin/metrics-collector/internal/zlog"
 )
 
@@ -41,8 +40,8 @@ func (r *reporterImpl) Report(gaugeMetrics map[string]float64, counterMetrics ma
 	}
 }
 
-func prepareUpdate(gaugeMetrics map[string]float64, counterMetrics map[string]int64) transport.MetricBatch {
-	batch := transport.NewBatch()
+func prepareUpdate(gaugeMetrics map[string]float64, counterMetrics map[string]int64) metric.MetricBatch {
+	batch := metric.NewBatch()
 
 	batch = prepare(gaugeMetrics, metric.Gauge, batch)
 	batch = prepare(counterMetrics, metric.Counter, batch)
@@ -50,9 +49,9 @@ func prepareUpdate(gaugeMetrics map[string]float64, counterMetrics map[string]in
 	return batch
 }
 
-func prepare[T int64 | float64](metrics map[string]T, kind metric.Kind, acc transport.MetricBatch) transport.MetricBatch {
+func prepare[T int64 | float64](metrics map[string]T, kind metric.Kind, acc metric.MetricBatch) metric.MetricBatch {
 	for name, value := range metrics {
-		m, err := transport.New(name, kind, value)
+		m, err := metric.New(name, kind, value)
 		if err != nil {
 			zlog.Logger.Warnf("report metric=%v, err=%s", name, err)
 			continue
@@ -64,7 +63,7 @@ func prepare[T int64 | float64](metrics map[string]T, kind metric.Kind, acc tran
 	return acc
 }
 
-func reportMetrics(URL string, batch transport.MetricBatch) error {
+func reportMetrics(URL string, batch metric.MetricBatch) error {
 	data, err := batch.Serialize()
 	if err != nil {
 		return fmt.Errorf("metric serializa err=%s", err)

@@ -3,7 +3,7 @@
 package mockstorage
 
 import (
-	metric "github.com/kuzhukin/metrics-collector/internal/server/metric"
+	metric "github.com/kuzhukin/metrics-collector/internal/metric"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -27,15 +27,15 @@ func (_m *Storage) BatchUpdate(m []*metric.Metric) error {
 }
 
 // Get provides a mock function with given fields: kind, name
-func (_m *Storage) Get(kind string, name string) (*metric.Metric, error) {
+func (_m *Storage) Get(kind metric.Kind, name string) (*metric.Metric, error) {
 	ret := _m.Called(kind, name)
 
 	var r0 *metric.Metric
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string, string) (*metric.Metric, error)); ok {
+	if rf, ok := ret.Get(0).(func(metric.Kind, string) (*metric.Metric, error)); ok {
 		return rf(kind, name)
 	}
-	if rf, ok := ret.Get(0).(func(string, string) *metric.Metric); ok {
+	if rf, ok := ret.Get(0).(func(metric.Kind, string) *metric.Metric); ok {
 		r0 = rf(kind, name)
 	} else {
 		if ret.Get(0) != nil {
@@ -43,7 +43,7 @@ func (_m *Storage) Get(kind string, name string) (*metric.Metric, error) {
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(string, string) error); ok {
+	if rf, ok := ret.Get(1).(func(metric.Kind, string) error); ok {
 		r1 = rf(kind, name)
 	} else {
 		r1 = ret.Error(1)

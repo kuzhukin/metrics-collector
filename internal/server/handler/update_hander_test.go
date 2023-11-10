@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/kuzhukin/metrics-collector/internal/metric"
 	"github.com/kuzhukin/metrics-collector/internal/server/codec"
-	"github.com/kuzhukin/metrics-collector/internal/server/metric"
 	"github.com/kuzhukin/metrics-collector/internal/server/parser"
 	"github.com/kuzhukin/metrics-collector/internal/server/parser/mockparser"
 	"github.com/kuzhukin/metrics-collector/internal/server/storage/mockstorage"
@@ -17,10 +17,12 @@ import (
 
 const fakeURLPath = "/"
 
+var fakeMEtricVal float64 = 3.14
+
 var fakeMetric = &metric.Metric{
-	Name:  "fake-metric",
-	Kind:  metric.Gauge,
-	Value: metric.GaugeValue(3.14),
+	ID:    "fake-metric",
+	Type:  metric.Gauge,
+	Value: &fakeMEtricVal,
 }
 
 func TestBadMethod(t *testing.T) {

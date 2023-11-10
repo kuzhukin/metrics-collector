@@ -5,7 +5,7 @@ package mockparser
 import (
 	http "net/http"
 
-	metric "github.com/kuzhukin/metrics-collector/internal/server/metric"
+	metric "github.com/kuzhukin/metrics-collector/internal/metric"
 	mock "github.com/stretchr/testify/mock"
 )
 

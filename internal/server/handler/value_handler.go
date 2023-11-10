@@ -39,9 +39,9 @@ func (u *ValueHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	storedMetric, err := u.storage.Get(metric.Kind, metric.Name)
+	storedMetric, err := u.storage.Get(metric.Type, metric.ID)
 	if err != nil {
-		zlog.Logger.Errorf("storage get kind=%s, name=%s err=%s", metric.Kind, metric.Name, err)
+		zlog.Logger.Errorf("storage get kind=%s, name=%s err=%s", metric.Type, metric.ID, err)
 		w.WriteHeader(http.StatusNotFound)
 
 		return

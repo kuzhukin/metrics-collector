@@ -3,9 +3,8 @@ package memorystorage
 import (
 	"fmt"
 
-	"github.com/kuzhukin/metrics-collector/internal/server/metric"
+	"github.com/kuzhukin/metrics-collector/internal/metric"
 	"github.com/kuzhukin/metrics-collector/internal/server/storage"
-	"github.com/kuzhukin/metrics-collector/internal/zlog"
 )
 
 var _ storage.Storage = &MemoryStorage{}
@@ -23,13 +22,13 @@ func New() *MemoryStorage {
 }
 
 func (s *MemoryStorage) Update(m *metric.Metric) error {
-	switch m.Kind {
+	switch m.Type {
 	case metric.Gauge:
-		s.GaugeMetrics.Write(m.Name, m.Value.Gauge())
+		s.GaugeMetrics.Write(m.ID, *m.Value)
 
 		return nil
 	case metric.Counter:
-		s.CounterMetrics.Sum(m.Name, m.Value.Counter())
+		s.CounterMetrics.Sum(m.ID, *m.Delta)
 
 		return nil
 	default:
@@ -55,7 +54,7 @@ func (s *MemoryStorage) Get(kind metric.Kind, name string) (*metric.Metric, erro
 			return nil, fmt.Errorf("name=%s, err=%w", name, storage.ErrUnknownMetric)
 		}
 
-		return metric.NewMetric(kind, name, metric.GaugeValue(gauge)), nil
+		return &metric.Metric{ID: name, Type: kind, Value: &gauge}, nil
 
 	case metric.Counter:
 		counter, ok := s.CounterMetrics.Get(name)
@@ -63,7 +62,7 @@ func (s *MemoryStorage) Get(kind metric.Kind, name string) (*metric.Metric, erro
 			return nil, fmt.Errorf("name=%s, err=%w", name, storage.ErrUnknownMetric)
 		}
 
-		return metric.NewMetric(kind, name, metric.CounterValue(counter)), nil
+		return &metric.Metric{ID: name, Type: kind, Delta: &counter}, nil
 	default:
 		return nil, storage.ErrUnknownKind
 	}
@@ -85,14 +84,13 @@ func (s *MemoryStorage) Stop() error {
 }
 
 func addMetricsToList[T float64 | int64](metrics map[string]T, kind metric.Kind, list []*metric.Metric) []*metric.Metric {
-	for name, valT := range metrics {
-		val, err := metric.NewValueByKind(kind, valT)
+	for name, val := range metrics {
+		m, err := metric.New(name, kind, val)
 		if err != nil {
-			zlog.Logger.Errorf("new value by kind=%s, err=%s", kind, err)
-			continue
+			panic(err)
 		}
 
-		list = append(list, metric.NewMetric(kind, name, val))
+		list = append(list, m)
 	}
 
 	return list

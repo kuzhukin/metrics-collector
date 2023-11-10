@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/kuzhukin/metrics-collector/internal/server/metric"
+	"github.com/kuzhukin/metrics-collector/internal/metric"
 )
 
 var ErrMetricNameIsNotFound error = errors.New("metric name isn't found")

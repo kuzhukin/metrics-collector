@@ -8,7 +8,7 @@ import (
 	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
-	"github.com/kuzhukin/metrics-collector/internal/server/metric"
+	"github.com/kuzhukin/metrics-collector/internal/metric"
 	"github.com/kuzhukin/metrics-collector/internal/server/storage"
 	"github.com/kuzhukin/metrics-collector/internal/zlog"
 )
@@ -158,7 +158,7 @@ func (s *DBStorage) updateMetrics(metricsByKind map[metric.Kind][]*metric.Metric
 		for _, m := range metrics {
 			args, err := prepareArgsForUpdate(m)
 			if err != nil {
-				return fmt.Errorf("prepare args for metric name=%s, kind=%s, err=%w", m.Name, m.Kind, err)
+				return fmt.Errorf("prepare args for metric name=%s, kind=%s, err=%w", m.ID, m.Type, err)
 			}
 
 			_, err = stmt.ExecContext(ctx, args...)
@@ -176,14 +176,14 @@ func groupMetricsByKind(metrics []*metric.Metric) map[metric.Kind][]*metric.Metr
 	grouped := make(map[metric.Kind][]*metric.Metric)
 
 	for _, m := range metrics {
-		kindMetrics, ok := grouped[m.Kind]
+		kindMetrics, ok := grouped[m.Type]
 		if !ok {
 			kindMetrics = []*metric.Metric{m}
 		} else {
 			kindMetrics = append(kindMetrics, m)
 		}
 
-		grouped[m.Kind] = kindMetrics
+		grouped[m.Type] = kindMetrics
 	}
 
 	return grouped
@@ -282,7 +282,7 @@ func makeParserForKind(kind metric.Kind) (func(rows *sql.Rows) (*metric.Metric, 
 				return nil, err
 			}
 
-			return metric.NewMetric(metric.Gauge, name, metric.GaugeValue(value)), nil
+			return &metric.Metric{ID: name, Type: metric.Gauge, Value: &value}, nil
 		}, nil
 	case metric.Counter:
 		return func(innerRows *sql.Rows) (*metric.Metric, error) {
@@ -291,7 +291,7 @@ func makeParserForKind(kind metric.Kind) (func(rows *sql.Rows) (*metric.Metric, 
 				return nil, err
 			}
 
-			return metric.NewMetric(metric.Gauge, name, metric.CounterValue(value)), nil
+			return &metric.Metric{ID: name, Type: metric.Gauge, Delta: &value}, nil
 		}, nil
 	default:
 		return nil, storage.ErrUnknownKind

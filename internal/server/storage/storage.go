@@ -3,7 +3,7 @@ package storage
 import (
 	"errors"
 
-	"github.com/kuzhukin/metrics-collector/internal/server/metric"
+	"github.com/kuzhukin/metrics-collector/internal/metric"
 )
 
 var ErrUnknownMetric = errors.New("unknown metric name")

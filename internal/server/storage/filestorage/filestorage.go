@@ -7,11 +7,10 @@ import (
 	"os"
 	"time"
 
+	"github.com/kuzhukin/metrics-collector/internal/metric"
 	"github.com/kuzhukin/metrics-collector/internal/server/config"
-	"github.com/kuzhukin/metrics-collector/internal/server/metric"
 	"github.com/kuzhukin/metrics-collector/internal/server/storage"
 	"github.com/kuzhukin/metrics-collector/internal/server/storage/memorystorage"
-	"github.com/kuzhukin/metrics-collector/internal/transport"
 	"github.com/kuzhukin/metrics-collector/internal/zlog"
 )
 
@@ -104,7 +103,7 @@ func (s *FileStorage) restore() error {
 		return fmt.Errorf("os readfile err=%w", err)
 	}
 
-	metrics := make([]*transport.Metric, 0)
+	metrics := make([]*metric.Metric, 0)
 
 	err = json.Unmarshal(data, &metrics)
 	if err != nil {
@@ -137,7 +136,7 @@ func (s *FileStorage) serialize() ([]byte, error) {
 	gauges := s.memoryStorage.GaugeMetrics.GetAll()
 	counters := s.memoryStorage.CounterMetrics.GetAll()
 
-	metrics := make([]*transport.Metric, 0, len(gauges)+len(counters))
+	metrics := make([]*metric.Metric, 0, len(gauges)+len(counters))
 
 	transportGauges, err := convertToTransportMetrics(gauges, metric.Gauge)
 	if err != nil {
@@ -164,11 +163,11 @@ func (s *FileStorage) Stop() error {
 	return nil
 }
 
-func convertToTransportMetrics[T int64 | float64](metrics map[string]T, kind metric.Kind) ([]*transport.Metric, error) {
-	transportMetrics := make([]*transport.Metric, 0, len(metrics))
+func convertToTransportMetrics[T int64 | float64](metrics map[string]T, kind metric.Kind) ([]*metric.Metric, error) {
+	transportMetrics := make([]*metric.Metric, 0, len(metrics))
 
 	for id, value := range metrics {
-		m, err := transport.New(id, kind, value)
+		m, err := metric.New(id, kind, value)
 		if err != nil {
 			return nil, fmt.Errorf("serializa id=%v kind=%v value=%v err=%w", id, kind, value, err)
 		}
@@ -180,7 +179,7 @@ func convertToTransportMetrics[T int64 | float64](metrics map[string]T, kind met
 }
 
 func convertFromTransportMetrics(
-	metrics []*transport.Metric,
+	metrics []*metric.Metric,
 ) (
 	*memorystorage.SyncStorage[float64],
 	*memorystorage.SyncStorage[int64],

@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/kuzhukin/metrics-collector/internal/metric"
 	"github.com/kuzhukin/metrics-collector/internal/server/codec"
-	"github.com/kuzhukin/metrics-collector/internal/server/metric"
-	"github.com/kuzhukin/metrics-collector/internal/transport"
 )
 
 func response(w http.ResponseWriter, r *http.Request, metric *metric.Metric) error {
@@ -25,15 +24,7 @@ func responseJSON(w http.ResponseWriter, r *http.Request, m *metric.Metric) erro
 	var data []byte
 	var err error
 
-	switch m.Kind {
-	case metric.Gauge:
-		data, err = transport.Serialize(m.Name, m.Kind, m.Value.Gauge())
-	case metric.Counter:
-		data, err = transport.Serialize(m.Name, m.Kind, m.Value.Counter())
-	default:
-		return transport.ErrUnknownMetricType
-	}
-
+	data, err = m.Serialize()
 	if err != nil {
 		return fmt.Errorf("serializa metric err=%w", err)
 	}

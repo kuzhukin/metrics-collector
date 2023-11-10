@@ -1,7 +1,7 @@
 package dbstorage
 
 import (
-	"github.com/kuzhukin/metrics-collector/internal/server/metric"
+	"github.com/kuzhukin/metrics-collector/internal/metric"
 	"github.com/kuzhukin/metrics-collector/internal/server/storage"
 )
 
@@ -33,11 +33,11 @@ const updateCounterMetricQuery = `INSERT INTO counter_metrics (id, value) VALUES
 	`ON CONFLICT (id) DO UPDATE SET value = counter_metrics.value + excluded.value;`
 
 func buildUpdateQuery(m *metric.Metric) (string, []interface{}, error) {
-	switch m.Kind {
+	switch m.Type {
 	case metric.Gauge:
-		return updateGaugeMetricQuery, []interface{}{m.Name, m.Value.Gauge()}, nil
+		return updateGaugeMetricQuery, []interface{}{m.ID, *m.Value}, nil
 	case metric.Counter:
-		return updateCounterMetricQuery, []interface{}{m.Name, m.Value.Counter()}, nil
+		return updateCounterMetricQuery, []interface{}{m.ID, *m.Delta}, nil
 	default:
 		return "", nil, storage.ErrUnknownKind
 	}
@@ -55,11 +55,11 @@ func getdUpdateQueryByKind(k metric.Kind) (string, error) {
 }
 
 func prepareArgsForUpdate(m *metric.Metric) ([]interface{}, error) {
-	switch m.Kind {
+	switch m.Type {
 	case metric.Gauge:
-		return []interface{}{m.Name, m.Value.Gauge()}, nil
+		return []interface{}{m.ID, *m.Value}, nil
 	case metric.Counter:
-		return []interface{}{m.Name, m.Value.Counter()}, nil
+		return []interface{}{m.ID, *m.Delta}, nil
 	default:
 		return nil, storage.ErrUnknownKind
 	}
