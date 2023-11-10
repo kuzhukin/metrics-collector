@@ -13,7 +13,7 @@ import (
 	"github.com/kuzhukin/metrics-collector/internal/zlog"
 )
 
-const updateEndpoint = "/update/"
+const batchUpdateEndpoint = "/updates/"
 
 //go:generate mockery --name=Reporter --filename=reporter.go --outpkg=mockreporter --output=mockreporter
 type Reporter interface {
@@ -31,28 +31,41 @@ func New(host string) Reporter {
 }
 
 func (r *reporterImpl) Report(gaugeMetrics map[string]float64, counterMetrics map[string]int64) {
-	r.reportGauges(gaugeMetrics)
-	r.reportCounters(counterMetrics)
-}
+	batch := prepareUpdate(gaugeMetrics, counterMetrics)
+	if batch.Len() == 0 {
+		return
+	}
 
-func (r *reporterImpl) reportGauges(gaugeMetrics map[string]float64) {
-	for name, value := range gaugeMetrics {
-		if err := reportMetric(r.updateURL, name, metric.Gauge, value); err != nil {
-			zlog.Logger.Warnf("report metric=%v, err=%s", name, err)
-		}
+	if err := reportMetrics(r.updateURL, batch); err != nil {
+		zlog.Logger.Errorf("report metrics err=%s", err)
 	}
 }
 
-func (r *reporterImpl) reportCounters(counterMetrics map[string]int64) {
-	for name, value := range counterMetrics {
-		if err := reportMetric(r.updateURL, name, metric.Counter, value); err != nil {
-			zlog.Logger.Warnf("report metric=%v, err=%s", name, err)
-		}
-	}
+func prepareUpdate(gaugeMetrics map[string]float64, counterMetrics map[string]int64) transport.MetricBatch {
+	batch := transport.NewBatch()
+
+	batch = prepare(gaugeMetrics, metric.Gauge, batch)
+	batch = prepare(counterMetrics, metric.Counter, batch)
+
+	return batch
 }
 
-func reportMetric[T int64 | float64](URL string, id string, kind metric.Kind, value T) error {
-	data, err := transport.Serialize(id, kind, value)
+func prepare[T int64 | float64](metrics map[string]T, kind metric.Kind, acc transport.MetricBatch) transport.MetricBatch {
+	for name, value := range metrics {
+		m, err := transport.New(name, kind, value)
+		if err != nil {
+			zlog.Logger.Warnf("report metric=%v, err=%s", name, err)
+			continue
+		}
+
+		acc.Add(m)
+	}
+
+	return acc
+}
+
+func reportMetrics(URL string, batch transport.MetricBatch) error {
+	data, err := batch.Serialize()
 	if err != nil {
 		return fmt.Errorf("metric serializa err=%s", err)
 	}
@@ -65,7 +78,6 @@ func reportMetric[T int64 | float64](URL string, id string, kind metric.Kind, va
 }
 
 func doReport(URL string, data []byte) error {
-
 	compressedData, err := compressData(data)
 	if err != nil {
 		return fmt.Errorf("compress data err=%w", err)
@@ -115,7 +127,7 @@ func doRequest(req *http.Request) error {
 }
 
 func makeUpdateURL(host string) string {
-	return host + updateEndpoint
+	return host + batchUpdateEndpoint
 }
 
 func compressData(data []byte) ([]byte, error) {

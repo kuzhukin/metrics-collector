@@ -158,10 +158,7 @@ func (s *DBStorage) doBatchUpdate(query string, argsList [][]interface{}) error 
 		return fmt.Errorf("begin tx, err=%w", err)
 	}
 	defer func() {
-		err := tx.Rollback()
-		if err != nil {
-			zlog.Logger.Errorf("update metrics tx rollbback err=%s", err)
-		}
+		_ = tx.Rollback()
 	}()
 
 	stmt, err := tx.PrepareContext(ctx, query)
