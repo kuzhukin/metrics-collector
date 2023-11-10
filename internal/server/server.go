@@ -68,7 +68,7 @@ func createServer(config *config.Config) (*MetricServer, error) {
 	updateHandler := handler.NewUpdateHandler(storage, requestsParser)
 	valueHandler := handler.NewValueHandler(storage, requestsParser)
 	pingHandler := handler.NewPingHandler(dbStorage)
-	batchUpdateHandler := handler.NewBatchUpdateHandler(dbStorage, requestsParser)
+	batchUpdateHandler := handler.NewBatchUpdateHandler(storage, requestsParser)
 
 	router := chi.NewRouter()
 	router.Use(middleware.LoggingHTTPHandler)
