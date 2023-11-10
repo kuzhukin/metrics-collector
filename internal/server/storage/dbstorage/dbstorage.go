@@ -124,32 +124,7 @@ func (s *DBStorage) BatchUpdate(metrics []*metric.Metric) error {
 }
 
 func (s *DBStorage) updateMetrics(metricsByKind map[metric.Kind][]*metric.Metric) error {
-	for kind, metrics := range metricsByKind {
-		query, err := getdUpdateQueryByKind(kind)
-		if err != nil {
-			return fmt.Errorf("get update query by kind")
-		}
 
-		argsList := make([][]interface{}, len(metrics))
-		for idx, m := range metrics {
-			args, err := prepareArgsForUpdate(m)
-			if err != nil {
-				return fmt.Errorf("prepare args for metric name=%s, kind=%s, err=%w", m.Name, m.Kind, err)
-			}
-
-			argsList[idx] = args
-		}
-
-		err = s.doBatchUpdate(query, argsList)
-		if err != nil {
-			return fmt.Errorf("do batch update, err=%w", err)
-		}
-	}
-
-	return nil
-}
-
-func (s *DBStorage) doBatchUpdate(query string, argsList [][]interface{}) error {
 	ctx, cancel := context.WithTimeout(context.Background(), updateAllMetricTimeout)
 	defer cancel()
 
@@ -161,18 +136,39 @@ func (s *DBStorage) doBatchUpdate(query string, argsList [][]interface{}) error 
 		_ = tx.Rollback()
 	}()
 
-	stmt, err := tx.PrepareContext(ctx, query)
-	if err != nil {
-		return err
-	}
-	defer stmt.Close()
+	statements := make([]*sql.Stmt, 0)
+	defer func() {
+		for _, st := range statements {
+			st.Close()
+		}
+	}()
 
-	for _, args := range argsList {
-		_, err = stmt.ExecContext(ctx, args...)
+	for kind, metrics := range metricsByKind {
+		query, err := getdUpdateQueryByKind(kind)
 		if err != nil {
-			return fmt.Errorf("stmt exec, err=%w", err)
+			return fmt.Errorf("get update query by kind")
+		}
+
+		stmt, err := tx.PrepareContext(ctx, query)
+		if err != nil {
+			return err
+		}
+		statements = append(statements, stmt)
+
+		for _, m := range metrics {
+			args, err := prepareArgsForUpdate(m)
+			if err != nil {
+				return fmt.Errorf("prepare args for metric name=%s, kind=%s, err=%w", m.Name, m.Kind, err)
+			}
+
+			_, err = stmt.ExecContext(ctx, args...)
+			if err != nil {
+				return fmt.Errorf("stmt exec, err=%w", err)
+			}
+
 		}
 	}
+
 	return tx.Commit()
 }
 
