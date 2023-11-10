@@ -43,6 +43,28 @@ func buildUpdateQuery(m *metric.Metric) (string, []interface{}, error) {
 	}
 }
 
+func getdUpdateQueryByKind(k metric.Kind) (string, error) {
+	switch k {
+	case metric.Gauge:
+		return updateGaugeMetricQuery, nil
+	case metric.Counter:
+		return updateCounterMetricQuery, nil
+	default:
+		return "", storage.ErrUnknownKind
+	}
+}
+
+func prepareArgsForUpdate(m *metric.Metric) ([]interface{}, error) {
+	switch m.Kind {
+	case metric.Gauge:
+		return []interface{}{m.Name, m.Value.Gauge()}, nil
+	case metric.Counter:
+		return []interface{}{m.Name, m.Value.Counter()}, nil
+	default:
+		return nil, storage.ErrUnknownKind
+	}
+}
+
 const getGaugeMetricQuery = `SELECT id, value FROM gauge_metrics WHERE id = $1;`
 const getCounterMetricQuery = `SELECT id, value FROM counter_metrics WHERE id = $1;`
 

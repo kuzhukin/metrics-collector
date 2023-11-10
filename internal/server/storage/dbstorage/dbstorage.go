@@ -14,11 +14,12 @@ import (
 )
 
 const (
-	pingTimeout          = time.Second * 10
-	createTablesTimeout  = time.Second * 5
-	updateMetricTimeout  = time.Second * 5
-	getMetricTimeout     = time.Second * 5
-	getAllMetricsTimeout = time.Second * 10
+	pingTimeout            = time.Second * 10
+	createTablesTimeout    = time.Second * 5
+	updateMetricTimeout    = time.Second * 5
+	updateAllMetricTimeout = time.Second * 60
+	getMetricTimeout       = time.Second * 5
+	getAllMetricsTimeout   = time.Second * 10
 )
 
 var (
@@ -113,8 +114,86 @@ func (s *DBStorage) Update(m *metric.Metric) error {
 }
 
 func (s *DBStorage) BatchUpdate(metrics []*metric.Metric) error {
-	// TODO:
+	groupedMetrics := groupMetricsByKind(metrics)
+
+	if err := s.updateMetrics(groupedMetrics); err != nil {
+		return fmt.Errorf("update metrics, err=%w", err)
+	}
+
 	return nil
+}
+
+func (s *DBStorage) updateMetrics(metricsByKind map[metric.Kind][]*metric.Metric) error {
+	for kind, metrics := range metricsByKind {
+		query, err := getdUpdateQueryByKind(kind)
+		if err != nil {
+			return fmt.Errorf("get update query by kind")
+		}
+
+		argsList := make([][]interface{}, len(metrics))
+		for idx, m := range metrics {
+			args, err := prepareArgsForUpdate(m)
+			if err != nil {
+				return fmt.Errorf("prepare args for metric name=%s, kind=%s, err=%w", m.Name, m.Kind, err)
+			}
+
+			argsList[idx] = args
+		}
+
+		err = s.doBatchUpdate(query, argsList)
+		if err != nil {
+			return fmt.Errorf("do batch update, err=%w", err)
+		}
+	}
+
+	return nil
+}
+
+func (s *DBStorage) doBatchUpdate(query string, argsList [][]interface{}) error {
+	ctx, cancel := context.WithTimeout(context.Background(), updateAllMetricTimeout)
+	defer cancel()
+
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin tx, err=%w", err)
+	}
+	defer func() {
+		err := tx.Rollback()
+		if err != nil {
+			zlog.Logger.Errorf("update metrics tx rollbback err=%s", err)
+		}
+	}()
+
+	stmt, err := tx.PrepareContext(ctx, query)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	for _, args := range argsList {
+		_, err = stmt.ExecContext(ctx, args...)
+		if err != nil {
+			return fmt.Errorf("stmt exec, err=%w", err)
+		}
+	}
+	return tx.Commit()
+}
+
+func groupMetricsByKind(metrics []*metric.Metric) map[metric.Kind][]*metric.Metric {
+	grouped := make(map[metric.Kind][]*metric.Metric)
+
+	for _, m := range metrics {
+		kindMetrics, ok := grouped[m.Kind]
+		if !ok {
+			kindMetrics = []*metric.Metric{m}
+		} else {
+			kindMetrics = append(kindMetrics, m)
+		}
+
+		grouped[m.Kind] = kindMetrics
+	}
+
+	return grouped
 }
 
 func (s *DBStorage) Get(kind metric.Kind, name string) (*metric.Metric, error) {
