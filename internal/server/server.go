@@ -91,12 +91,12 @@ func createServer(config *config.Config) (*MetricServer, error) {
 	}, nil
 }
 
-func (srvr *MetricServer) startHTTPServer() {
+func (s *MetricServer) startHTTPServer() {
 	go func() {
-		defer close(srvr.wait)
+		defer close(s.wait)
 
-		if err := srvr.srvr.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			zlog.Logger.Errorf("Http listen and serve, address=%s, err=%s\n", srvr.srvr.Addr, err)
+		if err := s.srvr.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			zlog.Logger.Errorf("Http listen and serve, address=%s, err=%s\n", s.srvr.Addr, err)
 		}
 	}()
 }
