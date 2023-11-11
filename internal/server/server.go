@@ -36,7 +36,7 @@ func StartNew() (*MetricServer, error) {
 
 	server.startHTTPServer()
 
-	zlog.Logger.Infof("Server started hostport=%v", config.Hostport)
+	zlog.Logger.Infof("Server started config=%+v", config)
 
 	return server, nil
 }

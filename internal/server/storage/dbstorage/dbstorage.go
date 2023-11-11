@@ -373,5 +373,5 @@ func doQuery[T any](queryFunc func() (*T, error)) (*T, error) {
 func isRetriableError(err error) bool {
 	var pgErr *pgconn.PgError
 
-	return errors.As(err, &pgErr) && pgerrcode.IsIntegrityConstraintViolation(pgErr.Code)
+	return errors.As(err, &pgErr) && (pgerrcode.IsIntegrityConstraintViolation(pgErr.Code) || pgerrcode.IsConnectionException(pgErr.Code))
 }

@@ -102,7 +102,14 @@ func makeUpdateRequest(URL string, data []byte) (*http.Request, error) {
 	return req, nil
 }
 
-var tryingIntervals []time.Duration = []time.Duration{time.Second * 1, time.Second * 3, time.Second * 5}
+var tryingIntervals []time.Duration = []time.Duration{
+	time.Millisecond * 100,
+	time.Millisecond * 300,
+	time.Millisecond * 500,
+	time.Millisecond * 1000,
+	time.Millisecond * 3000,
+	time.Millisecond * 5000,
+}
 
 func doRequest(req *http.Request) error {
 
