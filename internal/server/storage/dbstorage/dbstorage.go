@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgerrcode"
+	"github.com/jackc/pgx/v5/pgconn"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/kuzhukin/metrics-collector/internal/metric"
 	"github.com/kuzhukin/metrics-collector/internal/server/storage"
@@ -21,6 +23,8 @@ const (
 	getMetricTimeout       = time.Second * 5
 	getAllMetricsTimeout   = time.Second * 10
 )
+
+var tryingIntervals = []time.Duration{time.Second * 1, time.Second * 3, time.Second * 5}
 
 var (
 	compatibleMetricKinds = []metric.Kind{
@@ -102,12 +106,21 @@ func (s *DBStorage) Update(m *metric.Metric) error {
 		return fmt.Errorf("build update query for metric=%v, err=%w", m, err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), updateMetricTimeout)
-	defer cancel()
+	execFunc := func() (*sql.Result, error) {
+		ctx, cancel := context.WithTimeout(context.Background(), updateMetricTimeout)
+		defer cancel()
 
-	_, err = s.db.ExecContext(ctx, query, args...)
+		res, err := s.db.ExecContext(ctx, query, args...)
+		if err != nil {
+			return nil, fmt.Errorf("exec metric=%v update err=%w", m, err)
+		}
+
+		return &res, nil
+	}
+
+	_, err = doQuery(execFunc)
 	if err != nil {
-		return fmt.Errorf("exec metric=%v update err=%w", m, err)
+		return fmt.Errorf("do query, err=%w", err)
 	}
 
 	return nil
@@ -116,15 +129,22 @@ func (s *DBStorage) Update(m *metric.Metric) error {
 func (s *DBStorage) BatchUpdate(metrics []*metric.Metric) error {
 	groupedMetrics := groupMetricsByKind(metrics)
 
-	if err := s.updateMetrics(groupedMetrics); err != nil {
-		return fmt.Errorf("update metrics, err=%w", err)
+	query := func() (*struct{}, error) {
+		if err := s.updateMetrics(groupedMetrics); err != nil {
+			return nil, fmt.Errorf("update metrics, err=%w", err)
+		}
+
+		return nil, nil
+	}
+
+	if _, err := doQuery(query); err != nil {
+		return fmt.Errorf("do query, error")
 	}
 
 	return nil
 }
 
 func (s *DBStorage) updateMetrics(metricsByKind map[metric.Kind][]*metric.Metric) error {
-
 	ctx, cancel := context.WithTimeout(context.Background(), updateAllMetricTimeout)
 	defer cancel()
 
@@ -195,12 +215,21 @@ func (s *DBStorage) Get(kind metric.Kind, name string) (*metric.Metric, error) {
 		return nil, fmt.Errorf("build get query, err=%w", err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), getMetricTimeout)
-	defer cancel()
+	queryFunc := func() (*sql.Rows, error) {
+		ctx, cancel := context.WithTimeout(context.Background(), getMetricTimeout)
+		defer cancel()
 
-	rows, err := s.db.QueryContext(ctx, query, args...)
+		rows, err := s.db.QueryContext(ctx, query, args...)
+		if err != nil {
+			return nil, fmt.Errorf("query metric, err=%w", err)
+		}
+
+		return rows, nil
+	}
+
+	rows, err := doQuery(queryFunc)
 	if err != nil {
-		return nil, fmt.Errorf("query metric, err=%w", err)
+		return nil, fmt.Errorf("do query, err=%w", err)
 	}
 	defer rows.Close()
 
@@ -241,12 +270,21 @@ func (s *DBStorage) getAll(kind metric.Kind) ([]*metric.Metric, error) {
 		return nil, fmt.Errorf("build get all query for kind=%v, err=%w", kind, err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), getAllMetricsTimeout)
-	defer cancel()
+	queryFunc := func() (*sql.Rows, error) {
+		ctx, cancel := context.WithTimeout(context.Background(), getAllMetricsTimeout)
+		defer cancel()
 
-	rows, err := s.db.QueryContext(ctx, query)
+		rows, err := s.db.QueryContext(ctx, query)
+		if err != nil {
+			return nil, fmt.Errorf("query all metrics with kind=%s, err=%w", kind, err)
+		}
+
+		return rows, nil
+	}
+
+	rows, err := doQuery(queryFunc)
 	if err != nil {
-		return nil, fmt.Errorf("query all metrics with kind=%s, err=%w", kind, err)
+		return nil, fmt.Errorf("do query, err=%w", err)
 	}
 	defer rows.Close()
 
@@ -307,4 +345,33 @@ func parse[T int64 | float64](rows *sql.Rows) (string, T, error) {
 	}
 
 	return name, value, nil
+}
+
+func doQuery[T any](queryFunc func() (*T, error)) (*T, error) {
+	var commonErr error
+	max := len(tryingIntervals)
+
+	for trying := 0; trying <= max; trying++ {
+		rows, err := queryFunc()
+		if err != nil {
+			commonErr = errors.Join(commonErr, err)
+
+			if trying < max && isRetriableError(err) {
+				time.Sleep(tryingIntervals[trying])
+				continue
+			}
+
+			return nil, commonErr
+		}
+
+		return rows, nil
+	}
+
+	return nil, commonErr
+}
+
+func isRetriableError(err error) bool {
+	var pgErr *pgconn.PgError
+
+	return errors.As(err, &pgErr) && pgerrcode.IsIntegrityConstraintViolation(pgErr.Code)
 }
