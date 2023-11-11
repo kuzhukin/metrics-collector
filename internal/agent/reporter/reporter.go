@@ -102,15 +102,18 @@ func makeUpdateRequest(URL string, data []byte) (*http.Request, error) {
 	return req, nil
 }
 
-func doRequest(req *http.Request) error {
-	const maxTryingsNum = 5
-	var joinedError error
+var tryingIntervals []time.Duration = []time.Duration{time.Second * 1, time.Second * 3, time.Second * 5}
 
-	for trying := 0; trying < maxTryingsNum; trying++ {
+func doRequest(req *http.Request) error {
+
+	var joinedError error
+	maxTryingsNum := len(tryingIntervals)
+
+	for trying := 0; trying <= maxTryingsNum; trying++ {
 		if resp, err := http.DefaultClient.Do(req); err != nil {
 			if trying < maxTryingsNum {
 				joinedError = errors.Join(joinedError, err)
-				time.Sleep(time.Millisecond * 100)
+				time.Sleep(tryingIntervals[trying])
 			}
 		} else {
 			defer resp.Body.Close()
