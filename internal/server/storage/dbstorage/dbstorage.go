@@ -17,11 +17,11 @@ import (
 
 const (
 	pingTimeout            = time.Second * 10
-	createTablesTimeout    = time.Second * 5
-	updateMetricTimeout    = time.Second * 5
+	createTablesTimeout    = time.Second * 10
+	updateMetricTimeout    = time.Second * 10
 	updateAllMetricTimeout = time.Second * 60
-	getMetricTimeout       = time.Second * 5
-	getAllMetricsTimeout   = time.Second * 10
+	getMetricTimeout       = time.Second * 10
+	getAllMetricsTimeout   = time.Second * 60
 )
 
 var tryingIntervals = []time.Duration{time.Second * 1, time.Second * 3, time.Second * 5}
@@ -329,7 +329,7 @@ func makeParserForKind(kind metric.Kind) (func(rows *sql.Rows) (*metric.Metric, 
 				return nil, err
 			}
 
-			return &metric.Metric{ID: name, Type: metric.Gauge, Delta: &value}, nil
+			return &metric.Metric{ID: name, Type: metric.Counter, Delta: &value}, nil
 		}, nil
 	default:
 		return nil, storage.ErrUnknownKind
