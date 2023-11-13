@@ -31,7 +31,7 @@ func (u *GetListHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/html")
 
-	metrics, err := u.storage.List()
+	metrics, err := u.storage.List(r.Context())
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return

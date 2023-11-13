@@ -1,6 +1,7 @@
 package filestorage
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -47,8 +48,8 @@ func New(config config.StorageConfig) (*FileStorage, error) {
 	return storage, nil
 }
 
-func (s *FileStorage) Update(m *metric.Metric) error {
-	if err := s.memoryStorage.Update(m); err != nil {
+func (s *FileStorage) Update(ctx context.Context, m *metric.Metric) error {
+	if err := s.memoryStorage.Update(ctx, m); err != nil {
 		return err
 	}
 
@@ -59,8 +60,8 @@ func (s *FileStorage) Update(m *metric.Metric) error {
 	return s.sync()
 }
 
-func (s *FileStorage) BatchUpdate(metrics []*metric.Metric) error {
-	if err := s.memoryStorage.BatchUpdate(metrics); err != nil {
+func (s *FileStorage) BatchUpdate(ctx context.Context, metrics []*metric.Metric) error {
+	if err := s.memoryStorage.BatchUpdate(ctx, metrics); err != nil {
 		return err
 	}
 
@@ -71,12 +72,12 @@ func (s *FileStorage) BatchUpdate(metrics []*metric.Metric) error {
 	return s.sync()
 }
 
-func (s *FileStorage) Get(kind metric.Kind, name string) (*metric.Metric, error) {
-	return s.memoryStorage.Get(kind, name)
+func (s *FileStorage) Get(ctx context.Context, kind metric.Kind, name string) (*metric.Metric, error) {
+	return s.memoryStorage.Get(ctx, kind, name)
 }
 
-func (s *FileStorage) List() ([]*metric.Metric, error) {
-	return s.memoryStorage.List()
+func (s *FileStorage) List(ctx context.Context) ([]*metric.Metric, error) {
+	return s.memoryStorage.List(ctx)
 }
 
 func (s *FileStorage) startSyncer() {

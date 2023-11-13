@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"errors"
 
 	"github.com/kuzhukin/metrics-collector/internal/metric"
@@ -11,8 +12,8 @@ var ErrUnknownKind = errors.New("unknown metric kind")
 
 //go:generate mockery --name=Storage --filename=storage.go --outpkg=mockstorage --output=mockstorage
 type Storage interface {
-	Update(m *metric.Metric) error
-	BatchUpdate(m []*metric.Metric) error
-	Get(kind metric.Kind, name string) (*metric.Metric, error)
-	List() ([]*metric.Metric, error)
+	Update(ctx context.Context, m *metric.Metric) error
+	BatchUpdate(ctx context.Context, m []*metric.Metric) error
+	Get(ctx context.Context, kind metric.Kind, name string) (*metric.Metric, error)
+	List(ctx context.Context) ([]*metric.Metric, error)
 }

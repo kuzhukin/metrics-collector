@@ -87,8 +87,8 @@ func (s *DBStorage) Stop() error {
 	return nil
 }
 
-func (s *DBStorage) CheckConnection() bool {
-	ctx, cancel := context.WithTimeout(context.Background(), pingTimeout)
+func (s *DBStorage) CheckConnection(ctx context.Context) bool {
+	ctx, cancel := context.WithTimeout(ctx, pingTimeout)
 	defer cancel()
 
 	err := s.db.PingContext(ctx)
@@ -100,14 +100,14 @@ func (s *DBStorage) CheckConnection() bool {
 	return err == nil
 }
 
-func (s *DBStorage) Update(m *metric.Metric) error {
+func (s *DBStorage) Update(ctx context.Context, m *metric.Metric) error {
 	query, args, err := buildUpdateQuery(m)
 	if err != nil {
 		return fmt.Errorf("build update query for metric=%v, err=%w", m, err)
 	}
 
 	execFunc := func() (*sql.Result, error) {
-		ctx, cancel := context.WithTimeout(context.Background(), updateMetricTimeout)
+		ctx, cancel := context.WithTimeout(ctx, updateMetricTimeout)
 		defer cancel()
 
 		res, err := s.db.ExecContext(ctx, query, args...)
@@ -126,11 +126,11 @@ func (s *DBStorage) Update(m *metric.Metric) error {
 	return nil
 }
 
-func (s *DBStorage) BatchUpdate(metrics []*metric.Metric) error {
+func (s *DBStorage) BatchUpdate(ctx context.Context, metrics []*metric.Metric) error {
 	groupedMetrics := groupMetricsByKind(metrics)
 
 	query := func() (*struct{}, error) {
-		if err := s.updateMetrics(groupedMetrics); err != nil {
+		if err := s.updateMetrics(ctx, groupedMetrics); err != nil {
 			return nil, fmt.Errorf("update metrics, err=%w", err)
 		}
 
@@ -144,8 +144,8 @@ func (s *DBStorage) BatchUpdate(metrics []*metric.Metric) error {
 	return nil
 }
 
-func (s *DBStorage) updateMetrics(metricsByKind map[metric.Kind][]*metric.Metric) error {
-	ctx, cancel := context.WithTimeout(context.Background(), updateAllMetricTimeout)
+func (s *DBStorage) updateMetrics(ctx context.Context, metricsByKind map[metric.Kind][]*metric.Metric) error {
+	ctx, cancel := context.WithTimeout(ctx, updateAllMetricTimeout)
 	defer cancel()
 
 	tx, err := s.db.BeginTx(ctx, nil)
@@ -209,14 +209,14 @@ func groupMetricsByKind(metrics []*metric.Metric) map[metric.Kind][]*metric.Metr
 	return grouped
 }
 
-func (s *DBStorage) Get(kind metric.Kind, name string) (*metric.Metric, error) {
+func (s *DBStorage) Get(ctx context.Context, kind metric.Kind, name string) (*metric.Metric, error) {
 	query, args, err := buildGetQuery(name, kind)
 	if err != nil {
 		return nil, fmt.Errorf("build get query, err=%w", err)
 	}
 
 	queryFunc := func() (*sql.Rows, error) {
-		ctx, cancel := context.WithTimeout(context.Background(), getMetricTimeout)
+		ctx, cancel := context.WithTimeout(ctx, getMetricTimeout)
 		defer cancel()
 
 		rows, err := s.db.QueryContext(ctx, query, args...)
@@ -249,11 +249,11 @@ func (s *DBStorage) Get(kind metric.Kind, name string) (*metric.Metric, error) {
 	return nil, storage.ErrUnknownMetric
 }
 
-func (s *DBStorage) List() ([]*metric.Metric, error) {
+func (s *DBStorage) List(ctx context.Context) ([]*metric.Metric, error) {
 	acc := make([]*metric.Metric, 0)
 
 	for _, kind := range compatibleMetricKinds {
-		metrics, err := s.getAll(kind)
+		metrics, err := s.getAll(ctx, kind)
 		if err != nil {
 			return nil, err
 		}
@@ -264,14 +264,14 @@ func (s *DBStorage) List() ([]*metric.Metric, error) {
 	return acc, nil
 }
 
-func (s *DBStorage) getAll(kind metric.Kind) ([]*metric.Metric, error) {
+func (s *DBStorage) getAll(ctx context.Context, kind metric.Kind) ([]*metric.Metric, error) {
 	query, err := buildGetAllQuery(kind)
 	if err != nil {
 		return nil, fmt.Errorf("build get all query for kind=%v, err=%w", kind, err)
 	}
 
 	queryFunc := func() (*sql.Rows, error) {
-		ctx, cancel := context.WithTimeout(context.Background(), getAllMetricsTimeout)
+		ctx, cancel := context.WithTimeout(ctx, getAllMetricsTimeout)
 		defer cancel()
 
 		rows, err := s.db.QueryContext(ctx, query)

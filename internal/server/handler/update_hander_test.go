@@ -12,6 +12,7 @@ import (
 	"github.com/kuzhukin/metrics-collector/internal/server/parser"
 	"github.com/kuzhukin/metrics-collector/internal/server/parser/mockparser"
 	"github.com/kuzhukin/metrics-collector/internal/server/storage/mockstorage"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -47,7 +48,7 @@ func TestSuccessUpload(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	mockParser.On("Parse", r).Return(fakeMetric, nil)
-	mockStorage.On("Update", fakeMetric).Return(nil)
+	mockStorage.On("Update", mock.Anything, fakeMetric).Return(nil)
 
 	handler.ServeHTTP(w, r)
 
@@ -112,7 +113,7 @@ func TestStorageErrorToStatusCodes(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	mockParser.On("Parse", r).Return(fakeMetric, nil)
-	mockStorage.On("Update", fakeMetric).Return(errors.New("update error"))
+	mockStorage.On("Update", mock.Anything, fakeMetric).Return(errors.New("update error"))
 	handler.ServeHTTP(w, r)
 	require.Equal(t, http.StatusInternalServerError, w.Code)
 }

@@ -49,7 +49,7 @@ func (h *BatchUpdateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.storage.BatchUpdate(metrics); err != nil {
+	if err := h.storage.BatchUpdate(r.Context(), metrics); err != nil {
 		zlog.Logger.Errorf("batch updater metrics err=%s\n", err)
 		w.WriteHeader(http.StatusInternalServerError)
 

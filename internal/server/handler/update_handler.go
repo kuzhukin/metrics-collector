@@ -52,7 +52,7 @@ func (u *UpdateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := u.storage.Update(metric); err != nil {
+	if err := u.storage.Update(r.Context(), metric); err != nil {
 		zlog.Logger.Errorf("Metrics=%v updating err=%s\n", metric, err)
 		w.WriteHeader(http.StatusInternalServerError)
 

@@ -1,6 +1,7 @@
 package memorystorage
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/kuzhukin/metrics-collector/internal/metric"
@@ -21,7 +22,7 @@ func New() *MemoryStorage {
 	}
 }
 
-func (s *MemoryStorage) Update(m *metric.Metric) error {
+func (s *MemoryStorage) Update(_ context.Context, m *metric.Metric) error {
 	switch m.Type {
 	case metric.Gauge:
 		s.GaugeMetrics.Write(m.ID, *m.Value)
@@ -36,9 +37,9 @@ func (s *MemoryStorage) Update(m *metric.Metric) error {
 	}
 }
 
-func (s *MemoryStorage) BatchUpdate(metrics []*metric.Metric) error {
+func (s *MemoryStorage) BatchUpdate(ctx context.Context, metrics []*metric.Metric) error {
 	for _, m := range metrics {
-		if err := s.Update(m); err != nil {
+		if err := s.Update(ctx, m); err != nil {
 			return err
 		}
 	}
@@ -46,7 +47,7 @@ func (s *MemoryStorage) BatchUpdate(metrics []*metric.Metric) error {
 	return nil
 }
 
-func (s *MemoryStorage) Get(kind metric.Kind, name string) (*metric.Metric, error) {
+func (s *MemoryStorage) Get(_ context.Context, kind metric.Kind, name string) (*metric.Metric, error) {
 	switch kind {
 	case metric.Gauge:
 		gauge, ok := s.GaugeMetrics.Get(name)
@@ -68,7 +69,7 @@ func (s *MemoryStorage) Get(kind metric.Kind, name string) (*metric.Metric, erro
 	}
 }
 
-func (s *MemoryStorage) List() ([]*metric.Metric, error) {
+func (s *MemoryStorage) List(_ context.Context) ([]*metric.Metric, error) {
 	allGauges := s.GaugeMetrics.GetAll()
 	allCounters := s.CounterMetrics.GetAll()
 

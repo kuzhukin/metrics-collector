@@ -27,7 +27,7 @@ func (h *PingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !h.db.CheckConnection() {
+	if !h.db.CheckConnection(r.Context()) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}

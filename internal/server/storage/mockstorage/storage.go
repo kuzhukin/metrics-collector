@@ -3,6 +3,8 @@
 package mockstorage
 
 import (
+	context "context"
+
 	metric "github.com/kuzhukin/metrics-collector/internal/metric"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -12,13 +14,13 @@ type Storage struct {
 	mock.Mock
 }
 
-// BatchUpdate provides a mock function with given fields: m
-func (_m *Storage) BatchUpdate(m []*metric.Metric) error {
-	ret := _m.Called(m)
+// BatchUpdate provides a mock function with given fields: ctx, m
+func (_m *Storage) BatchUpdate(ctx context.Context, m []*metric.Metric) error {
+	ret := _m.Called(ctx, m)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func([]*metric.Metric) error); ok {
-		r0 = rf(m)
+	if rf, ok := ret.Get(0).(func(context.Context, []*metric.Metric) error); ok {
+		r0 = rf(ctx, m)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -26,25 +28,25 @@ func (_m *Storage) BatchUpdate(m []*metric.Metric) error {
 	return r0
 }
 
-// Get provides a mock function with given fields: kind, name
-func (_m *Storage) Get(kind metric.Kind, name string) (*metric.Metric, error) {
-	ret := _m.Called(kind, name)
+// Get provides a mock function with given fields: ctx, kind, name
+func (_m *Storage) Get(ctx context.Context, kind metric.Kind, name string) (*metric.Metric, error) {
+	ret := _m.Called(ctx, kind, name)
 
 	var r0 *metric.Metric
 	var r1 error
-	if rf, ok := ret.Get(0).(func(metric.Kind, string) (*metric.Metric, error)); ok {
-		return rf(kind, name)
+	if rf, ok := ret.Get(0).(func(context.Context, metric.Kind, string) (*metric.Metric, error)); ok {
+		return rf(ctx, kind, name)
 	}
-	if rf, ok := ret.Get(0).(func(metric.Kind, string) *metric.Metric); ok {
-		r0 = rf(kind, name)
+	if rf, ok := ret.Get(0).(func(context.Context, metric.Kind, string) *metric.Metric); ok {
+		r0 = rf(ctx, kind, name)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*metric.Metric)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(metric.Kind, string) error); ok {
-		r1 = rf(kind, name)
+	if rf, ok := ret.Get(1).(func(context.Context, metric.Kind, string) error); ok {
+		r1 = rf(ctx, kind, name)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -52,25 +54,25 @@ func (_m *Storage) Get(kind metric.Kind, name string) (*metric.Metric, error) {
 	return r0, r1
 }
 
-// List provides a mock function with given fields:
-func (_m *Storage) List() ([]*metric.Metric, error) {
-	ret := _m.Called()
+// List provides a mock function with given fields: ctx
+func (_m *Storage) List(ctx context.Context) ([]*metric.Metric, error) {
+	ret := _m.Called(ctx)
 
 	var r0 []*metric.Metric
 	var r1 error
-	if rf, ok := ret.Get(0).(func() ([]*metric.Metric, error)); ok {
-		return rf()
+	if rf, ok := ret.Get(0).(func(context.Context) ([]*metric.Metric, error)); ok {
+		return rf(ctx)
 	}
-	if rf, ok := ret.Get(0).(func() []*metric.Metric); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(context.Context) []*metric.Metric); ok {
+		r0 = rf(ctx)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*metric.Metric)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func() error); ok {
-		r1 = rf()
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -78,13 +80,13 @@ func (_m *Storage) List() ([]*metric.Metric, error) {
 	return r0, r1
 }
 
-// Update provides a mock function with given fields: m
-func (_m *Storage) Update(m *metric.Metric) error {
-	ret := _m.Called(m)
+// Update provides a mock function with given fields: ctx, m
+func (_m *Storage) Update(ctx context.Context, m *metric.Metric) error {
+	ret := _m.Called(ctx, m)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*metric.Metric) error); ok {
-		r0 = rf(m)
+	if rf, ok := ret.Get(0).(func(context.Context, *metric.Metric) error); ok {
+		r0 = rf(ctx, m)
 	} else {
 		r0 = ret.Error(0)
 	}
