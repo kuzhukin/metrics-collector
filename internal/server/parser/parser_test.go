@@ -6,13 +6,16 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/kuzhukin/metrics-collector/internal/metric"
 	"github.com/kuzhukin/metrics-collector/internal/server/codec"
 	"github.com/kuzhukin/metrics-collector/internal/server/endpoint"
-	"github.com/kuzhukin/metrics-collector/internal/server/metric"
 	"github.com/stretchr/testify/require"
 )
 
 func TestParseRequest(t *testing.T) {
+	val1011 := float64(100.1)
+	counter28 := int64(28)
+
 	tests := []struct {
 		name           string
 		metric         map[string]string
@@ -22,35 +25,35 @@ func TestParseRequest(t *testing.T) {
 		{
 			name: "normal gauge",
 			metric: map[string]string{
-				"kind":  metric.Gauge,
+				"kind":  string(metric.Gauge),
 				"name":  "metric",
 				"value": "100.1",
 			},
 			expectedMetric: &metric.Metric{
-				Kind:  metric.Gauge,
-				Name:  "metric",
-				Value: metric.GaugeValue(100.1),
+				Type:  metric.Gauge,
+				ID:    "metric",
+				Value: &val1011,
 			},
 			expectedError: nil,
 		},
 		{
 			name: "normal counter",
 			metric: map[string]string{
-				"kind":  metric.Counter,
+				"kind":  string(metric.Counter),
 				"name":  "metric",
 				"value": "28",
 			},
 			expectedMetric: &metric.Metric{
-				Kind:  metric.Counter,
-				Name:  "metric",
-				Value: metric.CounterValue(28),
+				Type:  metric.Counter,
+				ID:    "metric",
+				Delta: &counter28,
 			},
 			expectedError: nil,
 		},
 		{
 			name: "without metric name 1",
 			metric: map[string]string{
-				"kind":  metric.Counter,
+				"kind":  string(metric.Counter),
 				"name":  "",
 				"value": "28",
 			},
@@ -59,7 +62,7 @@ func TestParseRequest(t *testing.T) {
 		{
 			name: "without metric name 2",
 			metric: map[string]string{
-				"kind":  metric.Counter,
+				"kind":  string(metric.Counter),
 				"value": "28",
 			}, expectedError: ErrMetricNameIsNotFound,
 		},
@@ -75,7 +78,7 @@ func TestParseRequest(t *testing.T) {
 		{
 			name: "bad gauge value",
 			metric: map[string]string{
-				"kind":  metric.Gauge,
+				"kind":  string(metric.Gauge),
 				"name":  "metric",
 				"value": "aaa",
 			},
@@ -84,7 +87,7 @@ func TestParseRequest(t *testing.T) {
 		{
 			name: "bad counter value",
 			metric: map[string]string{
-				"kind":  metric.Counter,
+				"kind":  string(metric.Counter),
 				"name":  "metric",
 				"value": "100.1",
 			},

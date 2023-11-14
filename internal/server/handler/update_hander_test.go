@@ -7,20 +7,23 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/kuzhukin/metrics-collector/internal/metric"
 	"github.com/kuzhukin/metrics-collector/internal/server/codec"
-	"github.com/kuzhukin/metrics-collector/internal/server/metric"
 	"github.com/kuzhukin/metrics-collector/internal/server/parser"
 	"github.com/kuzhukin/metrics-collector/internal/server/parser/mockparser"
 	"github.com/kuzhukin/metrics-collector/internal/server/storage/mockstorage"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
 const fakeURLPath = "/"
 
+var fakeMEtricVal float64 = 3.14
+
 var fakeMetric = &metric.Metric{
-	Name:  "fake-metric",
-	Kind:  metric.Gauge,
-	Value: metric.GaugeValue(3.14),
+	ID:    "fake-metric",
+	Type:  metric.Gauge,
+	Value: &fakeMEtricVal,
 }
 
 func TestBadMethod(t *testing.T) {
@@ -45,7 +48,7 @@ func TestSuccessUpload(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	mockParser.On("Parse", r).Return(fakeMetric, nil)
-	mockStorage.On("Update", fakeMetric).Return(nil)
+	mockStorage.On("Update", mock.Anything, fakeMetric).Return(nil)
 
 	handler.ServeHTTP(w, r)
 
@@ -110,7 +113,7 @@ func TestStorageErrorToStatusCodes(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	mockParser.On("Parse", r).Return(fakeMetric, nil)
-	mockStorage.On("Update", fakeMetric).Return(errors.New("update error"))
+	mockStorage.On("Update", mock.Anything, fakeMetric).Return(errors.New("update error"))
 	handler.ServeHTTP(w, r)
 	require.Equal(t, http.StatusInternalServerError, w.Code)
 }

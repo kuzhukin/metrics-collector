@@ -6,15 +6,16 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/kuzhukin/metrics-collector/internal/log"
 	"github.com/kuzhukin/metrics-collector/internal/server/config"
 	"github.com/kuzhukin/metrics-collector/internal/server/endpoint"
 	"github.com/kuzhukin/metrics-collector/internal/server/handler"
 	"github.com/kuzhukin/metrics-collector/internal/server/handler/middleware"
 	"github.com/kuzhukin/metrics-collector/internal/server/parser"
 	"github.com/kuzhukin/metrics-collector/internal/server/storage"
+	"github.com/kuzhukin/metrics-collector/internal/server/storage/dbstorage"
 	"github.com/kuzhukin/metrics-collector/internal/server/storage/filestorage"
 	"github.com/kuzhukin/metrics-collector/internal/server/storage/memorystorage"
+	"github.com/kuzhukin/metrics-collector/internal/zlog"
 )
 
 type MetricServer struct {
@@ -28,16 +29,48 @@ func StartNew() (*MetricServer, error) {
 		return nil, fmt.Errorf("make config, err=%w", err)
 	}
 
-	storage, err := newStorage(config.Storage)
+	server, err := createServer(&config)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("create server, err=%w", err)
 	}
 
-	router := chi.NewRouter()
-	listHandler := handler.NewGetListHandler(storage)
-	updateHandler := handler.NewUpdateHandler(storage, parser.New())
-	valueHandler := handler.NewValueHandler(storage, parser.New())
+	server.startHTTPServer()
 
+	zlog.Logger.Infof("Server started config=%+v", config)
+
+	return server, nil
+}
+
+func createServer(config *config.Config) (*MetricServer, error) {
+	var err error
+	var storage storage.Storage
+	var dbStorage *dbstorage.DBStorage
+
+	if config.Storage.DatabaseDSN != "" {
+		dbStorage, err = dbstorage.StartNew(config.Storage.DatabaseDSN)
+		if err != nil {
+			return nil, fmt.Errorf("new db storage, err=%w", err)
+		}
+
+		storage = dbStorage
+	} else if config.Storage.FilePath != "" {
+		storage, err = filestorage.New(config.Storage)
+		if err != nil {
+			return nil, fmt.Errorf("new file storage, err=%w", err)
+		}
+	} else {
+		storage = memorystorage.New()
+	}
+
+	requestsParser := parser.New()
+
+	listHandler := handler.NewGetListHandler(storage)
+	updateHandler := handler.NewUpdateHandler(storage, requestsParser)
+	valueHandler := handler.NewValueHandler(storage, requestsParser)
+	pingHandler := handler.NewPingHandler(dbStorage)
+	batchUpdateHandler := handler.NewBatchUpdateHandler(storage, requestsParser)
+
+	router := chi.NewRouter()
 	router.Use(middleware.LoggingHTTPHandler)
 	router.Use(middleware.CompressingHTTPHandler)
 
@@ -46,46 +79,30 @@ func StartNew() (*MetricServer, error) {
 	router.Handle(endpoint.UpdateEndpointJSON, updateHandler)
 	router.Handle(endpoint.ValueEndpoint, valueHandler)
 	router.Handle(endpoint.ValueEndpointJSON, valueHandler)
+	router.Handle(endpoint.PingEndpoint, pingHandler)
+	router.Handle(endpoint.BatchUpdateEndpointJSON, batchUpdateHandler)
 
-	server := &MetricServer{
+	return &MetricServer{
 		srvr: http.Server{
 			Addr:    config.Hostport,
 			Handler: router,
 		},
 		wait: make(chan struct{}),
-	}
-
-	go func() {
-		defer close(server.wait)
-
-		if err := server.srvr.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Logger.Errorf("Http listen and serve, address=%s, err=%s\n", server.srvr.Addr, err)
-		}
-	}()
-
-	log.Logger.Infof("Server started hostport=%v", config.Hostport)
-
-	return server, nil
+	}, nil
 }
 
-func newStorage(config config.StorageConfig) (storage.Storage, error) {
-	var storage storage.Storage
-	var err error
+func (s *MetricServer) startHTTPServer() {
+	go func() {
+		defer close(s.wait)
 
-	if config.FilePath != "" {
-		storage, err = filestorage.New(config)
-		if err != nil {
-			return nil, fmt.Errorf("new file storage, err=%w", err)
+		if err := s.srvr.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			zlog.Logger.Errorf("Http listen and serve, address=%s, err=%s\n", s.srvr.Addr, err)
 		}
-	} else {
-		storage = memorystorage.New()
-	}
-
-	return storage, nil
+	}()
 }
 
 func (s *MetricServer) Stop() error {
-	log.Logger.Infof("Server stopped")
+	zlog.Logger.Infof("Server stopped")
 	return s.srvr.Shutdown(context.Background())
 }
 

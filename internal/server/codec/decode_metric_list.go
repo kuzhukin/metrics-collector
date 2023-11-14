@@ -3,7 +3,7 @@ package codec
 import (
 	"fmt"
 
-	"github.com/kuzhukin/metrics-collector/internal/server/metric"
+	"github.com/kuzhukin/metrics-collector/internal/metric"
 )
 
 const EmptyHTML = `
@@ -25,7 +25,7 @@ func DecodeMetricsList(metrics []*metric.Metric) string {
 	listHTML += "\t<ul>\n"
 
 	for _, m := range metrics {
-		listHTML += fmt.Sprintf("\t\t<li>%s: %s</li>\n", m.Name, DecodeValue(m))
+		listHTML += fmt.Sprintf("\t\t<li>%s: %s</li>\n", m.ID, DecodeValue(m))
 	}
 
 	listHTML += "\t</ul>"

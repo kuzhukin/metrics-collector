@@ -1,26 +1,27 @@
 package parser
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/kuzhukin/metrics-collector/internal/metric"
 	"github.com/kuzhukin/metrics-collector/internal/server/codec"
-	"github.com/kuzhukin/metrics-collector/internal/server/metric"
-	"github.com/kuzhukin/metrics-collector/internal/transport"
 )
 
-var _ RequestParser = &updateRequestParserImpl{}
+var _ RequestParser = &parserImpl{}
+var _ BatchRequestParser = &parserImpl{}
 
-type updateRequestParserImpl struct {
+type parserImpl struct {
 }
 
-func New() RequestParser {
-	return &updateRequestParserImpl{}
+func New() *parserImpl {
+	return &parserImpl{}
 }
 
-func (p *updateRequestParserImpl) Parse(r *http.Request) (*metric.Metric, error) {
+func (p *parserImpl) Parse(r *http.Request) (*metric.Metric, error) {
 	switch r.Header.Get("content-type") {
 	case "application/json":
 		return parseMetricByJSONBody(r)
@@ -29,10 +30,19 @@ func (p *updateRequestParserImpl) Parse(r *http.Request) (*metric.Metric, error)
 	}
 }
 
+func (p *parserImpl) BatchParse(r *http.Request) ([]*metric.Metric, error) {
+	switch r.Header.Get("content-type") {
+	case "application/json":
+		return parseBatchMetricByJSONBody(r)
+	default:
+		return nil, errors.New("incompatible content type for batch request")
+	}
+}
+
 func parseMetricByURLParams(r *http.Request) (*metric.Metric, error) {
-	kind := chi.URLParam(r, "kind")
+	kind := metric.Kind(chi.URLParam(r, "kind"))
 	name := chi.URLParam(r, "name")
-	value := chi.URLParam(r, "value")
+	valueStr := chi.URLParam(r, "value")
 
 	if err := checkName(name); err != nil {
 		return nil, err
@@ -42,16 +52,19 @@ func parseMetricByURLParams(r *http.Request) (*metric.Metric, error) {
 		return nil, err
 	}
 
-	var v metric.Value
-	if value != "" {
-		var err error
-		v, err = codec.Encode(kind, value)
+	m := &metric.Metric{Type: kind, ID: name}
+
+	if valueStr != "" {
+		delta, value, err := codec.Encode(kind, valueStr)
 		if err != nil {
 			return nil, err
 		}
+
+		m.Delta = delta
+		m.Value = value
 	}
 
-	return &metric.Metric{Kind: kind, Name: name, Value: v}, nil
+	return m, nil
 }
 
 func parseMetricByJSONBody(r *http.Request) (*metric.Metric, error) {
@@ -60,32 +73,57 @@ func parseMetricByJSONBody(r *http.Request) (*metric.Metric, error) {
 		return nil, fmt.Errorf("error reading body from request, err=%w", err)
 	}
 
-	metricMsg, err := transport.Desirialize(data)
+	metricMsg, err := metric.Desirialize(data)
 	if err != nil {
 		return nil, fmt.Errorf("metric desirialization err=%w", err)
 	}
 
-	if err := checkName(metricMsg.ID); err != nil {
-		return nil, fmt.Errorf("check name metric=%v, data=%v, err=%w", metricMsg, data, err)
+	metric, err := parseMetricByJSONBodyImpl(metricMsg)
+	if err != nil {
+		return nil, fmt.Errorf("parse data=%v, err=%w", data, err)
 	}
 
-	if err := checkKind(metricMsg.Type); err != nil {
+	return metric, nil
+}
+
+func parseBatchMetricByJSONBody(r *http.Request) ([]*metric.Metric, error) {
+	data, err := io.ReadAll(r.Body)
+	if err != nil {
+		return nil, fmt.Errorf("error reading body from request, err=%w", err)
+	}
+
+	batchMetric := metric.NewBatch()
+	if err := batchMetric.Deserialize(data); err != nil {
+		return nil, fmt.Errorf("batch metric desirialization err=%w", err)
+	}
+
+	metrics := make([]*metric.Metric, 0, batchMetric.Len())
+	err = batchMetric.Foreach(func(nextMetric *metric.Metric) error {
+		m, internalErr := parseMetricByJSONBodyImpl(nextMetric)
+		if internalErr != nil {
+			return fmt.Errorf("parse metric err=%w", err)
+		}
+
+		metrics = append(metrics, m)
+		return nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("parse batch data=%v, err=%w", data, err)
+	}
+
+	return metrics, nil
+}
+
+func parseMetricByJSONBodyImpl(metric *metric.Metric) (*metric.Metric, error) {
+	if err := checkName(metric.ID); err != nil {
+		return nil, fmt.Errorf("check name metric=%v, err=%w", metric, err)
+	}
+
+	if err := checkKind(metric.Type); err != nil {
 		return nil, err
 	}
 
-	var v metric.Value
-	switch metricMsg.Type {
-	case metric.Gauge:
-		if metricMsg.Value != nil {
-			v = metric.GaugeValue(*metricMsg.Value)
-		}
-	case metric.Counter:
-		if metricMsg.Delta != nil {
-			v = metric.CounterValue(*metricMsg.Delta)
-		}
-	}
-
-	return &metric.Metric{Kind: metricMsg.Type, Name: metricMsg.ID, Value: v}, nil
+	return metric, nil
 }
 
 func checkName(name string) error {

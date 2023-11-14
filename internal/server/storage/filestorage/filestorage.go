@@ -1,18 +1,18 @@
 package filestorage
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 	"time"
 
-	"github.com/kuzhukin/metrics-collector/internal/log"
+	"github.com/kuzhukin/metrics-collector/internal/metric"
 	"github.com/kuzhukin/metrics-collector/internal/server/config"
-	"github.com/kuzhukin/metrics-collector/internal/server/metric"
 	"github.com/kuzhukin/metrics-collector/internal/server/storage"
 	"github.com/kuzhukin/metrics-collector/internal/server/storage/memorystorage"
-	"github.com/kuzhukin/metrics-collector/internal/transport"
+	"github.com/kuzhukin/metrics-collector/internal/zlog"
 )
 
 var _ storage.Storage = &FileStorage{}
@@ -24,7 +24,7 @@ type FileStorage struct {
 	interval time.Duration
 }
 
-func New(config config.StorageConfig) (storage.Storage, error) {
+func New(config config.StorageConfig) (*FileStorage, error) {
 	storage := &FileStorage{
 		memoryStorage: memorystorage.MemoryStorage{
 			GaugeMetrics:   memorystorage.NewSyncStorage[float64](),
@@ -37,7 +37,7 @@ func New(config config.StorageConfig) (storage.Storage, error) {
 
 	if config.Restore {
 		if err := storage.restore(); err != nil {
-			log.Logger.Warnf("Restore metrics from file=%v err=%s", storage.filepath, err)
+			zlog.Logger.Warnf("Restore metrics from file=%v err=%s", storage.filepath, err)
 		}
 	}
 
@@ -48,8 +48,8 @@ func New(config config.StorageConfig) (storage.Storage, error) {
 	return storage, nil
 }
 
-func (s *FileStorage) Update(m *metric.Metric) error {
-	if err := s.memoryStorage.Update(m); err != nil {
+func (s *FileStorage) Update(ctx context.Context, m *metric.Metric) error {
+	if err := s.memoryStorage.Update(ctx, m); err != nil {
 		return err
 	}
 
@@ -60,12 +60,24 @@ func (s *FileStorage) Update(m *metric.Metric) error {
 	return s.sync()
 }
 
-func (s *FileStorage) Get(kind metric.Kind, name string) (*metric.Metric, error) {
-	return s.memoryStorage.Get(kind, name)
+func (s *FileStorage) BatchUpdate(ctx context.Context, metrics []*metric.Metric) error {
+	if err := s.memoryStorage.BatchUpdate(ctx, metrics); err != nil {
+		return err
+	}
+
+	if s.interval != 0 {
+		return nil
+	}
+
+	return s.sync()
 }
 
-func (s *FileStorage) List() []*metric.Metric {
-	return s.memoryStorage.List()
+func (s *FileStorage) Get(ctx context.Context, kind metric.Kind, name string) (*metric.Metric, error) {
+	return s.memoryStorage.Get(ctx, kind, name)
+}
+
+func (s *FileStorage) List(ctx context.Context) ([]*metric.Metric, error) {
+	return s.memoryStorage.List(ctx)
 }
 
 func (s *FileStorage) startSyncer() {
@@ -76,7 +88,7 @@ func (s *FileStorage) startSyncer() {
 		for {
 			<-sync.C
 			if err := s.sync(); err != nil {
-				log.Logger.Errorf("sync metrics err=%w", err)
+				zlog.Logger.Errorf("sync metrics err=%w", err)
 			}
 		}
 	}()
@@ -92,7 +104,7 @@ func (s *FileStorage) restore() error {
 		return fmt.Errorf("os readfile err=%w", err)
 	}
 
-	metrics := make([]*transport.Metric, 0)
+	metrics := make([]*metric.Metric, 0)
 
 	err = json.Unmarshal(data, &metrics)
 	if err != nil {
@@ -125,7 +137,7 @@ func (s *FileStorage) serialize() ([]byte, error) {
 	gauges := s.memoryStorage.GaugeMetrics.GetAll()
 	counters := s.memoryStorage.CounterMetrics.GetAll()
 
-	metrics := make([]*transport.Metric, 0, len(gauges)+len(counters))
+	metrics := make([]*metric.Metric, 0, len(gauges)+len(counters))
 
 	transportGauges, err := convertToTransportMetrics(gauges, metric.Gauge)
 	if err != nil {
@@ -148,11 +160,15 @@ func (s *FileStorage) serialize() ([]byte, error) {
 	return data, nil
 }
 
-func convertToTransportMetrics[T int64 | float64](metrics map[string]T, kind metric.Kind) ([]*transport.Metric, error) {
-	transportMetrics := make([]*transport.Metric, 0, len(metrics))
+func (s *FileStorage) Stop() error {
+	return nil
+}
+
+func convertToTransportMetrics[T int64 | float64](metrics map[string]T, kind metric.Kind) ([]*metric.Metric, error) {
+	transportMetrics := make([]*metric.Metric, 0, len(metrics))
 
 	for id, value := range metrics {
-		m, err := transport.New(id, kind, value)
+		m, err := metric.New(id, kind, value)
 		if err != nil {
 			return nil, fmt.Errorf("serializa id=%v kind=%v value=%v err=%w", id, kind, value, err)
 		}
@@ -164,7 +180,7 @@ func convertToTransportMetrics[T int64 | float64](metrics map[string]T, kind met
 }
 
 func convertFromTransportMetrics(
-	metrics []*transport.Metric,
+	metrics []*metric.Metric,
 ) (
 	*memorystorage.SyncStorage[float64],
 	*memorystorage.SyncStorage[int64],
@@ -179,7 +195,7 @@ func convertFromTransportMetrics(
 		case metric.Counter:
 			counters[m.ID] = *m.Delta
 		default:
-			log.Logger.Warnf("Unknown metric kind=%v", m.Type)
+			zlog.Logger.Warnf("Unknown metric kind=%v", m.Type)
 		}
 	}
 

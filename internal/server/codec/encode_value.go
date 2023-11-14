@@ -4,36 +4,36 @@ import (
 	"errors"
 	"strconv"
 
-	"github.com/kuzhukin/metrics-collector/internal/server/metric"
+	"github.com/kuzhukin/metrics-collector/internal/metric"
 )
 
 var ErrBadMetricValue error = errors.New("bad metric value")
 
-type encodeFunc = func(val string) (metric.Value, error)
+type encodeFunc = func(val string) (*int64, *float64, error)
 
 var valueEncoders = map[metric.Kind]encodeFunc{
 	metric.Gauge:   encodeGauge,
 	metric.Counter: encodeCounter,
 }
 
-func Encode(kind metric.Kind, value string) (metric.Value, error) {
+func Encode(kind metric.Kind, value string) (*int64, *float64, error) {
 	return valueEncoders[kind](value)
 }
 
-func encodeGauge(val string) (metric.Value, error) {
+func encodeGauge(val string) (*int64, *float64, error) {
 	v, err := strconv.ParseFloat(val, 64)
 	if err != nil {
-		return nil, errors.Join(ErrBadMetricValue, err)
+		return nil, nil, errors.Join(ErrBadMetricValue, err)
 	}
 
-	return metric.GaugeValue(v), nil
+	return nil, &v, nil
 }
 
-func encodeCounter(val string) (metric.Value, error) {
+func encodeCounter(val string) (*int64, *float64, error) {
 	v, err := strconv.ParseInt(val, 10, 64)
 	if err != nil {
-		return nil, errors.Join(ErrBadMetricValue, err)
+		return nil, nil, errors.Join(ErrBadMetricValue, err)
 	}
 
-	return metric.CounterValue(v), nil
+	return &v, nil, nil
 }

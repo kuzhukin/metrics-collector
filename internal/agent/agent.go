@@ -3,7 +3,7 @@ package agent
 import (
 	"github.com/kuzhukin/metrics-collector/internal/agent/controller"
 	"github.com/kuzhukin/metrics-collector/internal/agent/reporter"
-	"github.com/kuzhukin/metrics-collector/internal/log"
+	"github.com/kuzhukin/metrics-collector/internal/zlog"
 )
 
 type Agent struct {
@@ -18,13 +18,13 @@ func StartNew(config Config) *Agent {
 
 	go agent.ctrl.Start()
 
-	log.Logger.Infof("Metrics Agent started hostport=%v, pollinterval=%v, reportinterval=%v", config.Hostport, config.PollInterval, config.ReportInterval)
+	zlog.Logger.Infof("Metrics Agent started hostport=%v, pollinterval=%v, reportinterval=%v", config.Hostport, config.PollInterval, config.ReportInterval)
 
 	return &agent
 }
 
 func (a *Agent) Stop() {
-	log.Logger.Infof("Metrics Agent stopped")
+	zlog.Logger.Infof("Metrics Agent stopped")
 
 	a.ctrl.Stop()
 }

@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/kuzhukin/metrics-collector/internal/log"
+	"github.com/kuzhukin/metrics-collector/internal/zlog"
 )
 
 var _ http.ResponseWriter = &loggingResponseWriter{}
@@ -45,7 +45,7 @@ func LoggingHTTPHandler(h http.Handler) http.Handler {
 		lw := newLoggingResponseWriter(w)
 		duration := lw.doRequestWithTimer(h, r)
 
-		log.Logger.Infof("uri=%v, method=%v, status=%v, size=%v, duration=%v",
+		zlog.Logger.Infof("uri=%v, method=%v, status=%v, size=%v, duration=%v",
 			r.RequestURI, r.Method, lw.status, lw.size, duration)
 	}
 

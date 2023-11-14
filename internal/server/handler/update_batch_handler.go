@@ -5,35 +5,32 @@ import (
 	"net/http"
 
 	"github.com/kuzhukin/metrics-collector/internal/server/codec"
-	"github.com/kuzhukin/metrics-collector/internal/server/endpoint"
 	"github.com/kuzhukin/metrics-collector/internal/server/parser"
 	"github.com/kuzhukin/metrics-collector/internal/server/storage"
 	"github.com/kuzhukin/metrics-collector/internal/zlog"
 )
 
-var _ http.Handler = &UpdateHandler{}
+var _ http.Handler = &BatchUpdateHandler{}
 
-type UpdateHandler struct {
+type BatchUpdateHandler struct {
 	storage storage.Storage
-	parser  parser.RequestParser
+	parser  parser.BatchRequestParser
 }
 
-func NewUpdateHandler(storage storage.Storage, parser parser.RequestParser) *UpdateHandler {
-	return &UpdateHandler{
+func NewBatchUpdateHandler(storage storage.Storage, parser parser.BatchRequestParser) *BatchUpdateHandler {
+	return &BatchUpdateHandler{
 		storage: storage,
 		parser:  parser,
 	}
 }
 
-func (u *UpdateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h *BatchUpdateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		zlog.Logger.Infof("Endpoint %s supports only POST method", endpoint.UpdateEndpoint)
 		w.WriteHeader(http.StatusMethodNotAllowed)
-
 		return
 	}
 
-	metric, err := u.parser.Parse(r)
+	metrics, err := h.parser.BatchParse(r)
 	if err != nil {
 		if errors.Is(err, parser.ErrMetricNameIsNotFound) {
 			zlog.Logger.Warnf("Metric wasn't found path=%s, err=%s", r.URL.Path, err)
@@ -52,15 +49,12 @@ func (u *UpdateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := u.storage.Update(r.Context(), metric); err != nil {
-		zlog.Logger.Errorf("Metrics=%v updating err=%s\n", metric, err)
+	if err := h.storage.BatchUpdate(r.Context(), metrics); err != nil {
+		zlog.Logger.Errorf("batch updater metrics err=%s\n", err)
 		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
 
-	if err := response(w, r, metric); err != nil {
-		zlog.Logger.Warnf("response metric=%v, err=%s", *metric, err)
-		http.Error(w, "internal error", http.StatusInternalServerError)
-	}
+	w.WriteHeader(http.StatusOK)
 }

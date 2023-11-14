@@ -3,10 +3,10 @@ package handler
 import (
 	"net/http"
 
-	"github.com/kuzhukin/metrics-collector/internal/log"
 	"github.com/kuzhukin/metrics-collector/internal/server/endpoint"
 	"github.com/kuzhukin/metrics-collector/internal/server/parser"
 	"github.com/kuzhukin/metrics-collector/internal/server/storage"
+	"github.com/kuzhukin/metrics-collector/internal/zlog"
 )
 
 var _ http.Handler = &ValueHandler{}
@@ -25,7 +25,7 @@ func NewValueHandler(storage storage.Storage, parser parser.RequestParser) *Valu
 
 func (u *ValueHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet && r.Method != http.MethodPost {
-		log.Logger.Infof("Endpoint %s supports only GET method", endpoint.ValueEndpoint)
+		zlog.Logger.Infof("Endpoint %s supports only GET method", endpoint.ValueEndpoint)
 		w.WriteHeader(http.StatusMethodNotAllowed)
 
 		return
@@ -33,22 +33,22 @@ func (u *ValueHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	metric, err := u.parser.Parse(r)
 	if err != nil {
-		log.Logger.Warnf("Parse request path=%s, err=%s", r.URL.Path, err)
+		zlog.Logger.Warnf("Parse request path=%s, err=%s", r.URL.Path, err)
 		w.WriteHeader(http.StatusBadRequest)
 
 		return
 	}
 
-	storedMetric, err := u.storage.Get(metric.Kind, metric.Name)
+	storedMetric, err := u.storage.Get(r.Context(), metric.Type, metric.ID)
 	if err != nil {
-		log.Logger.Errorf("storage get kind=%s, name=%s err=%s", metric.Kind, metric.Name, err)
+		zlog.Logger.Errorf("storage get kind=%s, name=%s err=%s", metric.Type, metric.ID, err)
 		w.WriteHeader(http.StatusNotFound)
 
 		return
 	}
 
 	if err := response(w, r, storedMetric); err != nil {
-		log.Logger.Warnf("response metric=%v, err=%s", *storedMetric, err)
+		zlog.Logger.Warnf("response metric=%v, err=%s", *storedMetric, err)
 		http.Error(w, "internal error", http.StatusInternalServerError)
 	}
 }

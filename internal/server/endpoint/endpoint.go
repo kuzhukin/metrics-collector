@@ -17,9 +17,15 @@ const (
 	// POST: write metric on server
 	UpdateEndpoint = "/update/{kind}/{name}/{value}"
 
+	// POST: write batch metric on server in json format
+	BatchUpdateEndpointJSON = "/updates/"
+
 	// POST: request metric in json format
 	// example body: {"id": "metric", "type": "gauge"}
 	ValueEndpointJSON = "/value/"
 	// GET: returning metric value
 	ValueEndpoint = "/value/{kind}/{name}"
+
+	// GET: check database connection
+	PingEndpoint = "/ping"
 )
