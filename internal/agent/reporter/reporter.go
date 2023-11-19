@@ -3,6 +3,8 @@ package reporter
 import (
 	"bytes"
 	"compress/gzip"
+	"crypto/hmac"
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"net/http"
@@ -21,11 +23,19 @@ type Reporter interface {
 
 type reporterImpl struct {
 	updateURL string
+	tokenKey  []byte
 }
 
-func New(host string) Reporter {
+func New(host string, tokenKey string) Reporter {
+	var key []byte
+
+	if tokenKey != "" {
+		key = []byte(tokenKey)
+	}
+
 	return &reporterImpl{
 		updateURL: makeUpdateURL(host),
+		tokenKey:  key,
 	}
 }
 
@@ -35,7 +45,7 @@ func (r *reporterImpl) Report(gaugeMetrics map[string]float64, counterMetrics ma
 		return
 	}
 
-	if err := reportMetrics(r.updateURL, batch); err != nil {
+	if err := r.reportMetrics(batch); err != nil {
 		zlog.Logger.Errorf("report metrics err=%s", err)
 	}
 }
@@ -63,26 +73,26 @@ func prepare[T int64 | float64](metrics map[string]T, kind metric.Kind, acc metr
 	return acc
 }
 
-func reportMetrics(URL string, batch metric.MetricBatch) error {
+func (r *reporterImpl) reportMetrics(batch metric.MetricBatch) error {
 	data, err := batch.Serialize()
 	if err != nil {
 		return fmt.Errorf("metric serializa err=%s", err)
 	}
 
-	if err := doReport(URL, data); err != nil {
+	if err := r.doReport(data); err != nil {
 		return fmt.Errorf("do report, err=%w", err)
 	}
 
 	return nil
 }
 
-func doReport(URL string, data []byte) error {
+func (r *reporterImpl) doReport(data []byte) error {
 	compressedData, err := compressData(data)
 	if err != nil {
 		return fmt.Errorf("compress data err=%w", err)
 	}
 
-	request, err := makeUpdateRequest(URL, compressedData)
+	request, err := r.makeUpdateRequest(compressedData)
 	if err != nil {
 		return fmt.Errorf("make update request err=%w", err)
 	}
@@ -90,8 +100,8 @@ func doReport(URL string, data []byte) error {
 	return doRequest(request)
 }
 
-func makeUpdateRequest(URL string, data []byte) (*http.Request, error) {
-	req, err := http.NewRequest(http.MethodPost, URL, bytes.NewReader(data))
+func (r *reporterImpl) makeUpdateRequest(data []byte) (*http.Request, error) {
+	req, err := http.NewRequest(http.MethodPost, r.updateURL, bytes.NewReader(data))
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +109,26 @@ func makeUpdateRequest(URL string, data []byte) (*http.Request, error) {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Content-Encoding", "gzip")
 
+	if r.tokenKey != nil {
+		hash, err := r.hash(data)
+		if err != nil {
+			return nil, fmt.Errorf("hash data, err=%w", err)
+		}
+
+		req.Header.Set("HashSHA256", string(hash))
+	}
+
 	return req, nil
+}
+
+func (r *reporterImpl) hash(data []byte) ([]byte, error) {
+	hasher := hmac.New(sha256.New, r.tokenKey)
+	_, err := hasher.Write(data)
+	if err != nil {
+		return nil, fmt.Errorf("hasher write, err=%w", err)
+	}
+
+	return hasher.Sum(nil), nil
 }
 
 var tryingIntervals []time.Duration = []time.Duration{
@@ -109,7 +138,6 @@ var tryingIntervals []time.Duration = []time.Duration{
 }
 
 func doRequest(req *http.Request) error {
-
 	var joinedError error
 	maxTryingsNum := len(tryingIntervals)
 
