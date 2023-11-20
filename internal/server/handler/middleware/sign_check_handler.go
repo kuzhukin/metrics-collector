@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"crypto/hmac"
 	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
+	"reflect"
 
 	"github.com/kuzhukin/metrics-collector/internal/zlog"
 )
@@ -22,8 +24,14 @@ func InitSignHandlers(key string) {
 
 func SignCheckHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		expectedHash := r.Header.Get("HashSHA256")
-		if expectedHash == "" {
+		expectedHash, err := hex.DecodeString(r.Header.Get("HashSHA256"))
+		if err != nil {
+			zlog.Logger.Warnf("decode HashSHA256 header from hex to string, err=%s", err)
+			w.WriteHeader(http.StatusBadRequest)
+		}
+
+		if len(expectedHash) == 0 {
+			zlog.Logger.Warnf("HashSHA256 haeder is empty")
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -37,6 +45,7 @@ func SignCheckHandler(h http.Handler) http.Handler {
 
 		if err := checkDataConsistency(data, secretKey, expectedHash); err != nil {
 			if errors.Is(err, ErrBadDataHash) {
+				zlog.Logger.Warnf("Bad data signature err=%s", err)
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
@@ -69,7 +78,7 @@ func (c *signResponseWriter) Write(b []byte) (int, error) {
 		return 0, err
 	}
 
-	c.ResponseWriter.Header().Set("HashSHA256", string(hash))
+	c.ResponseWriter.Header().Set("HashSHA256", hex.EncodeToString(hash))
 
 	return c.ResponseWriter.Write(b)
 }
@@ -82,14 +91,14 @@ func SignCreateHandler(h http.Handler) http.Handler {
 	})
 }
 
-func checkDataConsistency(data []byte, key []byte, expectedHash string) error {
+func checkDataConsistency(data []byte, key []byte, expectedHash []byte) error {
 	hash, err := calcHash(data, key)
 	if err != nil {
 		return fmt.Errorf("calc hash, err=%w", err)
 	}
 
-	if string(hash) != expectedHash {
-		return ErrBadDataHash
+	if !reflect.DeepEqual(hash, expectedHash) {
+		return fmt.Errorf("calculated=%v, expected=%v, err=%w", hex.EncodeToString(hash), hex.EncodeToString(expectedHash), ErrBadDataHash)
 	}
 
 	return nil

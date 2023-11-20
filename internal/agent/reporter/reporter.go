@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"crypto/hmac"
 	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"net/http"
@@ -115,7 +116,7 @@ func (r *reporterImpl) makeUpdateRequest(data []byte) (*http.Request, error) {
 			return nil, fmt.Errorf("hash data, err=%w", err)
 		}
 
-		req.Header.Set("HashSHA256", string(hash))
+		req.Header.Set("HashSHA256", hex.EncodeToString(hash))
 	}
 
 	return req, nil
@@ -157,7 +158,7 @@ func doRequest(req *http.Request) error {
 		}
 	}
 
-	return errors.New("request trying limit exceeded")
+	return fmt.Errorf("request trying limit exceeded, errs=%w", joinedError)
 }
 
 func makeUpdateURL(host string) string {
