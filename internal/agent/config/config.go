@@ -17,7 +17,7 @@ type Config struct {
 	Hostport       string `env:"ADDRESS"`
 	ReportInterval int    `env:"REPORT_INTERVAL"`
 	PollInterval   int    `env:"POLL_INTERVAL"`
-	TokenKey       string `env:"KEY"`
+	SingnatureKey  string `env:"KEY"`
 }
 
 func MakeConfig() (Config, error) {
@@ -26,7 +26,7 @@ func MakeConfig() (Config, error) {
 	flag.StringVar(&config.Hostport, "a", hostportDefault, "Set ip:port of server")
 	flag.IntVar(&config.ReportInterval, "r", reportIntervalDefault, "Interval in seconds for sending metrics snapshot to server")
 	flag.IntVar(&config.PollInterval, "p", pollIntervalSecDefault, "Interval in seconds for polling and collecting metrics")
-	flag.StringVar(&config.TokenKey, "k", "", "Secret key for token")
+	flag.StringVar(&config.SingnatureKey, "k", "", "Signature key")
 	flag.Parse()
 
 	if err := env.Parse(&config); err != nil {

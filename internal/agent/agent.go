@@ -12,7 +12,7 @@ type Agent struct {
 }
 
 func StartNew(config config.Config) *Agent {
-	reporter := reporter.New("http://"+config.Hostport, config.TokenKey)
+	reporter := reporter.New("http://"+config.Hostport, config.SingnatureKey)
 	agent := Agent{
 		ctrl: controller.New(reporter, config.PollInterval, config.ReportInterval),
 	}

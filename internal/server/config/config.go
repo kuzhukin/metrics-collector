@@ -15,8 +15,9 @@ const (
 )
 
 type Config struct {
-	Hostport string `env:"ADDRESS"`
-	Storage  StorageConfig
+	Hostport      string `env:"ADDRESS"`
+	SingnatureKey string `env:"KEY"`
+	Storage       StorageConfig
 }
 
 type StorageConfig struct {

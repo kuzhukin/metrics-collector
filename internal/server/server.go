@@ -72,6 +72,13 @@ func createServer(config *config.Config) (*MetricServer, error) {
 
 	router := chi.NewRouter()
 	router.Use(middleware.LoggingHTTPHandler)
+
+	if config.SingnatureKey != "" {
+		middleware.InitSignHandlers(config.SingnatureKey)
+		router.Use(middleware.SignCheckHandler)
+		router.Use(middleware.SignCreateHandler)
+	}
+
 	router.Use(middleware.CompressingHTTPHandler)
 
 	router.Handle(endpoint.RootEndpoint, listHandler)
