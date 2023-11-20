@@ -30,31 +30,27 @@ func SignCheckHandler(h http.Handler) http.Handler {
 			w.WriteHeader(http.StatusBadRequest)
 		}
 
-		if len(expectedHash) == 0 {
-			zlog.Logger.Warnf("HashSHA256 haeder is empty")
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-
-		data, err := io.ReadAll(r.Body)
-		if err != nil {
-			zlog.Logger.Warnf("Read all from body path=%v err=%s", r.URL.Path, err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		if err := checkDataConsistency(data, secretKey, expectedHash); err != nil {
-			if errors.Is(err, ErrBadDataHash) {
-				zlog.Logger.Warnf("Bad data signature err=%s", err)
-				w.WriteHeader(http.StatusBadRequest)
+		if len(expectedHash) != 0 {
+			data, err := io.ReadAll(r.Body)
+			if err != nil {
+				zlog.Logger.Warnf("Read all from body path=%v err=%s", r.URL.Path, err)
+				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
 
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
+			if err := checkDataConsistency(data, secretKey, expectedHash); err != nil {
+				if errors.Is(err, ErrBadDataHash) {
+					zlog.Logger.Warnf("Bad data signature err=%s", err)
+					w.WriteHeader(http.StatusBadRequest)
+					return
+				}
 
-		r.Body = io.NopCloser(bytes.NewReader(data))
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+
+			r.Body = io.NopCloser(bytes.NewReader(data))
+		}
 
 		h.ServeHTTP(w, r)
 	})
