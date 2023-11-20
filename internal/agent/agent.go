@@ -19,7 +19,7 @@ func StartNew(config config.Config) *Agent {
 
 	go agent.ctrl.Start()
 
-	zlog.Logger.Infof("Metrics Agent started hostport=%v, pollinterval=%v, reportinterval=%v", config.Hostport, config.PollInterval, config.ReportInterval)
+	zlog.Logger.Infof("Metrics Agent started  config=%+v", config)
 
 	return &agent
 }
