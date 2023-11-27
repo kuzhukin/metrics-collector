@@ -32,8 +32,14 @@ func TestControllerPolling(t *testing.T) {
 	// waiting for stop
 	time.Sleep(time.Second * 1)
 
-	require.Len(t, controller.gaugeMetrics, len(allGaugeMetrics))
-	require.Len(t, controller.counterMetrics, len(allCounterMetrics))
+	for _, m := range allGaugeMetrics {
+		require.Contains(t, controller.gaugeMetrics, m)
+	}
+
+	for _, m := range allCounterMetrics {
+		require.Contains(t, controller.counterMetrics, m)
+	}
+
 	require.Equal(t, int64(pollIntervalsCount), controller.counterMetrics["PollCount"])
 }
 
