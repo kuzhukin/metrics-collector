@@ -113,24 +113,6 @@ func (c *Controller) startReporter() {
 	}()
 }
 
-func (c *Controller) getMetrics() (map[string]float64, map[string]int64) {
-	c.metricsLock.Lock()
-	defer c.metricsLock.Unlock()
-
-	gauges := make(map[string]float64, len(c.gaugeMetrics))
-	counters := make(map[string]int64, len(c.counterMetrics))
-
-	for k, v := range c.gaugeMetrics {
-		gauges[k] = v
-	}
-
-	for k, v := range c.counterMetrics {
-		counters[k] = v
-	}
-
-	return gauges, counters
-}
-
 func (c *Controller) collectMetrics() {
 
 	c.collectGauge()
@@ -214,4 +196,22 @@ func (c *Controller) collectCounter() {
 
 func genRandom() float64 {
 	return rand.Float64()
+}
+
+func (c *Controller) getMetrics() (map[string]float64, map[string]int64) {
+	c.metricsLock.Lock()
+	defer c.metricsLock.Unlock()
+
+	gauges := make(map[string]float64, len(c.gaugeMetrics))
+	counters := make(map[string]int64, len(c.counterMetrics))
+
+	for k, v := range c.gaugeMetrics {
+		gauges[k] = v
+	}
+
+	for k, v := range c.counterMetrics {
+		counters[k] = v
+	}
+
+	return gauges, counters
 }

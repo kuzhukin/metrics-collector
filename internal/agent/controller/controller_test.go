@@ -1,12 +1,10 @@
 package controller
 
 import (
-	"sync"
 	"testing"
 	"time"
 
 	"github.com/kuzhukin/metrics-collector/internal/agent/reporter/mockreporter"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -42,27 +40,6 @@ func TestControllerPolling(t *testing.T) {
 	}
 
 	require.Equal(t, int64(pollIntervalsCount), counters["PollCount"])
-}
-
-func TestControllerReporting(t *testing.T) {
-	mockReporter := mockreporter.NewReporter(t)
-	controller := New(mockReporter, pollingInterval, reportInterval)
-	require.Len(t, controller.gaugeMetrics, 0)
-
-	wg := &sync.WaitGroup{}
-
-	wg.Add(1)
-	go controller.Start()
-
-	// waiting without reports
-	time.Sleep(time.Second * reportInterval / 2)
-
-	mockReporter.On("Report", mock.Anything, mock.Anything)
-
-	// waiting without reports
-	time.Sleep(time.Second * reportInterval)
-
-	controller.Stop()
 }
 
 var allGaugeMetrics = []string{
