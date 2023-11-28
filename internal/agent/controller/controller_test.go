@@ -18,9 +18,6 @@ func TestControllerPolling(t *testing.T) {
 	controller := New(mockReporter, pollingInterval, reportInterval)
 	require.Len(t, controller.gaugeMetrics, 0)
 
-	wg := &sync.WaitGroup{}
-
-	wg.Add(1)
 	go controller.Start()
 
 	// waiting 2 polling intervals
@@ -32,15 +29,19 @@ func TestControllerPolling(t *testing.T) {
 	// waiting for stop
 	time.Sleep(time.Second * 1)
 
+	gauges, counters := controller.getMetrics()
+	require.Greater(t, len(gauges), 0)
+	require.Greater(t, len(counters), 0)
+
 	for _, m := range allGaugeMetrics {
-		require.Contains(t, controller.gaugeMetrics, m)
+		require.Contains(t, gauges, m)
 	}
 
 	for _, m := range allCounterMetrics {
-		require.Contains(t, controller.counterMetrics, m)
+		require.Contains(t, counters, m)
 	}
 
-	require.Equal(t, int64(pollIntervalsCount), controller.counterMetrics["PollCount"])
+	require.Equal(t, int64(pollIntervalsCount), counters["PollCount"])
 }
 
 func TestControllerReporting(t *testing.T) {

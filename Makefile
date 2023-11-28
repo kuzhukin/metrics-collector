@@ -18,7 +18,7 @@ build-%:
 .PHONY: test
 test:
 	@echo === Tests
-	go test -count 1 -v ./...
+	go test -count 1 -v -cover ./...
 
 define clean
 	rm ./cmd/$(1)/$(1)

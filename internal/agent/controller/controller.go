@@ -120,6 +120,14 @@ func (c *Controller) getMetrics() (map[string]float64, map[string]int64) {
 	gauges := make(map[string]float64, len(c.gaugeMetrics))
 	counters := make(map[string]int64, len(c.counterMetrics))
 
+	for k, v := range c.gaugeMetrics {
+		gauges[k] = v
+	}
+
+	for k, v := range c.counterMetrics {
+		counters[k] = v
+	}
+
 	return gauges, counters
 }
 
