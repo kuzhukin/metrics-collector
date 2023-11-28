@@ -3,6 +3,7 @@ package controller
 import (
 	"math/rand"
 	"runtime"
+	"sync"
 	"time"
 
 	"github.com/kuzhukin/metrics-collector/internal/agent/reporter"
@@ -13,6 +14,7 @@ type Controller struct {
 	polingInterval int
 	reportInterval int
 
+	metricsLock    sync.Mutex
 	gaugeMetrics   map[string]float64
 	counterMetrics map[string]int64
 
@@ -35,6 +37,7 @@ func New(reporter reporter.Reporter, pollingInterval, reportInterval int) *Contr
 func (c *Controller) Start() {
 	zlog.Logger.Infof("Controller started")
 	c.loop()
+	zlog.Logger.Infof("Controller stopped")
 }
 
 func (c *Controller) Stop() {
@@ -64,6 +67,7 @@ func (c *Controller) loop() {
 }
 
 func (c *Controller) collectMetrics() {
+
 	c.collectGauge()
 	c.collectCounter()
 }
@@ -71,6 +75,9 @@ func (c *Controller) collectMetrics() {
 func (c *Controller) collectGauge() {
 	memstats := &runtime.MemStats{}
 	runtime.ReadMemStats(memstats)
+
+	c.metricsLock.Lock()
+	defer c.metricsLock.Unlock()
 
 	c.addGauge("Alloc", float64(memstats.Alloc))
 	c.addGauge("BuckHashSys", float64(memstats.BuckHashSys))
@@ -109,9 +116,30 @@ func (c *Controller) addGauge(name string, value float64) {
 }
 
 func (c *Controller) collectCounter() {
+	c.metricsLock.Lock()
+	defer c.metricsLock.Unlock()
+
 	c.counterMetrics["PollCount"]++
 }
 
 func genRandom() float64 {
 	return rand.Float64()
+}
+
+func (c *Controller) getMetrics() (map[string]float64, map[string]int64) {
+	c.metricsLock.Lock()
+	defer c.metricsLock.Unlock()
+
+	gauges := make(map[string]float64, len(c.gaugeMetrics))
+	counters := make(map[string]int64, len(c.counterMetrics))
+
+	for k, v := range c.gaugeMetrics {
+		gauges[k] = v
+	}
+
+	for k, v := range c.counterMetrics {
+		counters[k] = v
+	}
+
+	return gauges, counters
 }
