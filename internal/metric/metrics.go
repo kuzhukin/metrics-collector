@@ -8,19 +8,17 @@ import (
 type Kind string
 
 const (
-	// is float metric
-	Gauge Kind = "gauge"
-	// is integer metric
+	Gauge   Kind = "gauge"
 	Counter Kind = "counter"
 )
 
 var ErrUnknownMetricType error = errors.New("unknown metric type")
 
 type Metric struct {
-	ID    string   `json:"id"`              // имя метрики
-	Type  Kind     `json:"type"`            // параметр, принимающий значение gauge или counter
-	Delta *int64   `json:"delta,omitempty"` // значение метрики в случае передачи counter
-	Value *float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
+	ID    string   `json:"id"`
+	Type  Kind     `json:"type"`
+	Delta *int64   `json:"delta,omitempty"`
+	Value *float64 `json:"value,omitempty"`
 }
 
 func New(id string, kind Kind, value interface{}) (*Metric, error) {

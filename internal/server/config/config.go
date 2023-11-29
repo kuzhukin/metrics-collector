@@ -15,8 +15,9 @@ const (
 )
 
 type Config struct {
-	Hostport string `env:"ADDRESS"`
-	Storage  StorageConfig
+	Hostport      string `env:"ADDRESS"`
+	SingnatureKey string `env:"KEY"`
+	Storage       StorageConfig
 }
 
 type StorageConfig struct {
@@ -34,6 +35,7 @@ func MakeConfig() (Config, error) {
 	flag.StringVar(&config.Storage.FilePath, "f", fileStoragePathDefault, "Path of persistent storage")
 	flag.BoolVar(&config.Storage.Restore, "r", restoreDefault, "Enable downloading metrics from persistent storage on the start")
 	flag.StringVar(&config.Storage.DatabaseDSN, "d", "", "Database connection string")
+	flag.StringVar(&config.SingnatureKey, "k", "", "Signature key")
 
 	flag.Parse()
 

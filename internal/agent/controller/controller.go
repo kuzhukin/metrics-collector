@@ -1,18 +1,24 @@
 package controller
 
 import (
+	"fmt"
 	"math/rand"
 	"runtime"
+	"sync"
 	"time"
 
 	"github.com/kuzhukin/metrics-collector/internal/agent/reporter"
 	"github.com/kuzhukin/metrics-collector/internal/zlog"
+	"github.com/shirou/gopsutil/v3/cpu"
+	"github.com/shirou/gopsutil/v3/mem"
 )
 
 type Controller struct {
+	wg             sync.WaitGroup
 	polingInterval int
 	reportInterval int
 
+	metricsLock    sync.Mutex
 	gaugeMetrics   map[string]float64
 	counterMetrics map[string]int64
 
@@ -34,36 +40,81 @@ func New(reporter reporter.Reporter, pollingInterval, reportInterval int) *Contr
 
 func (c *Controller) Start() {
 	zlog.Logger.Infof("Controller started")
-	c.loop()
+	c.start()
+	zlog.Logger.Infof("Controller stopped")
 }
 
 func (c *Controller) Stop() {
 	close(c.done)
 }
 
-func (c *Controller) loop() {
+func (c *Controller) start() {
+	c.startCollector()
+	c.startReporter()
+	c.startGoPsUtilCollector()
 
-	pollingTicker := time.NewTicker(time.Second * time.Duration(c.polingInterval))
-	defer pollingTicker.Stop()
+	c.wg.Wait()
+}
 
-	reportTicker := time.NewTicker(time.Second * time.Duration(c.reportInterval))
-	defer reportTicker.Stop()
+func (c *Controller) startCollector() {
+	c.wg.Add(1)
+	go func() {
+		defer c.wg.Done()
 
-	for {
-		select {
-		case <-pollingTicker.C:
-			c.collectMetrics()
-		case <-reportTicker.C:
-			c.reporter.Report(c.gaugeMetrics, c.counterMetrics)
-		case <-c.done:
-			zlog.Logger.Infof("Controller stopped\n")
+		pollingTicker := time.NewTicker(time.Second * time.Duration(c.polingInterval))
+		defer pollingTicker.Stop()
 
-			return
+		for {
+			select {
+			case <-pollingTicker.C:
+				c.collectMetrics()
+			case <-c.done:
+				return
+			}
 		}
-	}
+	}()
+}
+
+func (c *Controller) startGoPsUtilCollector() {
+	c.wg.Add(1)
+	go func() {
+		defer c.wg.Done()
+
+		pollingTicker := time.NewTicker(time.Second * time.Duration(c.polingInterval))
+		defer pollingTicker.Stop()
+
+		for {
+			select {
+			case <-pollingTicker.C:
+				c.collectGoPsUtilMetrics()
+			case <-c.done:
+				return
+			}
+		}
+	}()
+}
+
+func (c *Controller) startReporter() {
+	c.wg.Add(1)
+	go func() {
+		defer c.wg.Done()
+
+		reportTicker := time.NewTicker(time.Second * time.Duration(c.reportInterval))
+		defer reportTicker.Stop()
+
+		for {
+			select {
+			case <-reportTicker.C:
+				c.reporter.Report(c.getMetrics())
+			case <-c.done:
+				return
+			}
+		}
+	}()
 }
 
 func (c *Controller) collectMetrics() {
+
 	c.collectGauge()
 	c.collectCounter()
 }
@@ -71,6 +122,9 @@ func (c *Controller) collectMetrics() {
 func (c *Controller) collectGauge() {
 	memstats := &runtime.MemStats{}
 	runtime.ReadMemStats(memstats)
+
+	c.metricsLock.Lock()
+	defer c.metricsLock.Unlock()
 
 	c.addGauge("Alloc", float64(memstats.Alloc))
 	c.addGauge("BuckHashSys", float64(memstats.BuckHashSys))
@@ -104,14 +158,60 @@ func (c *Controller) collectGauge() {
 	c.addGauge("RandomValue", genRandom())
 }
 
+func (c *Controller) collectGoPsUtilMetrics() {
+	v, err := mem.VirtualMemory()
+	if err != nil {
+		zlog.Logger.Errorf("read gosputil virt mem, err=%s", err)
+		return
+	}
+
+	utils, err := cpu.Percent(time.Second, true)
+	if err != nil {
+		zlog.Logger.Errorf("read gosputil virt mem, err=%s", err)
+		return
+	}
+
+	c.metricsLock.Lock()
+	defer c.metricsLock.Unlock()
+
+	c.addGauge("TotalMemory", float64(v.Total))
+	c.addGauge("FreeMemory", float64(v.Free))
+
+	for i, percent := range utils {
+		c.addGauge(fmt.Sprintf("CPUutilization%d", i), percent)
+	}
+
+}
+
 func (c *Controller) addGauge(name string, value float64) {
 	c.gaugeMetrics[name] = value
 }
 
 func (c *Controller) collectCounter() {
+	c.metricsLock.Lock()
+	defer c.metricsLock.Unlock()
+
 	c.counterMetrics["PollCount"]++
 }
 
 func genRandom() float64 {
 	return rand.Float64()
+}
+
+func (c *Controller) getMetrics() (map[string]float64, map[string]int64) {
+	c.metricsLock.Lock()
+	defer c.metricsLock.Unlock()
+
+	gauges := make(map[string]float64, len(c.gaugeMetrics))
+	counters := make(map[string]int64, len(c.counterMetrics))
+
+	for k, v := range c.gaugeMetrics {
+		gauges[k] = v
+	}
+
+	for k, v := range c.counterMetrics {
+		counters[k] = v
+	}
+
+	return gauges, counters
 }

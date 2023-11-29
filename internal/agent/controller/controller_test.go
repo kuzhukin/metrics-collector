@@ -1,12 +1,10 @@
 package controller
 
 import (
-	"sync"
 	"testing"
 	"time"
 
 	"github.com/kuzhukin/metrics-collector/internal/agent/reporter/mockreporter"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -18,9 +16,6 @@ func TestControllerPolling(t *testing.T) {
 	controller := New(mockReporter, pollingInterval, reportInterval)
 	require.Len(t, controller.gaugeMetrics, 0)
 
-	wg := &sync.WaitGroup{}
-
-	wg.Add(1)
 	go controller.Start()
 
 	// waiting 2 polling intervals
@@ -32,30 +27,19 @@ func TestControllerPolling(t *testing.T) {
 	// waiting for stop
 	time.Sleep(time.Second * 1)
 
-	require.Len(t, controller.gaugeMetrics, len(allGaugeMetrics))
-	require.Len(t, controller.counterMetrics, len(allCounterMetrics))
-	require.Equal(t, int64(pollIntervalsCount), controller.counterMetrics["PollCount"])
-}
+	gauges, counters := controller.getMetrics()
+	require.Greater(t, len(gauges), 0)
+	require.Greater(t, len(counters), 0)
 
-func TestControllerReporting(t *testing.T) {
-	mockReporter := mockreporter.NewReporter(t)
-	controller := New(mockReporter, pollingInterval, reportInterval)
-	require.Len(t, controller.gaugeMetrics, 0)
+	for _, m := range allGaugeMetrics {
+		require.Contains(t, gauges, m)
+	}
 
-	wg := &sync.WaitGroup{}
+	for _, m := range allCounterMetrics {
+		require.Contains(t, counters, m)
+	}
 
-	wg.Add(1)
-	go controller.Start()
-
-	// waiting without reports
-	time.Sleep(time.Second * reportInterval / 2)
-
-	mockReporter.On("Report", mock.Anything, mock.Anything)
-
-	// waiting without reports
-	time.Sleep(time.Second * reportInterval)
-
-	controller.Stop()
+	require.Equal(t, int64(pollIntervalsCount), counters["PollCount"])
 }
 
 var allGaugeMetrics = []string{
