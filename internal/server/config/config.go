@@ -17,6 +17,7 @@ const (
 type Config struct {
 	Hostport      string `env:"ADDRESS"`
 	SingnatureKey string `env:"KEY"`
+	EnableLogger  bool   `env:"ENABLE_LOGGER"`
 	Storage       StorageConfig
 }
 
@@ -36,6 +37,7 @@ func MakeConfig() (Config, error) {
 	flag.BoolVar(&config.Storage.Restore, "r", restoreDefault, "Enable downloading metrics from persistent storage on the start")
 	flag.StringVar(&config.Storage.DatabaseDSN, "d", "", "Database connection string")
 	flag.StringVar(&config.SingnatureKey, "k", "", "Signature key")
+	flag.BoolVar(&config.EnableLogger, "l", true, "Enable logger")
 
 	flag.Parse()
 

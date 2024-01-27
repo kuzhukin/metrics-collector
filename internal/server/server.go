@@ -71,7 +71,9 @@ func createServer(config *config.Config) (*MetricServer, error) {
 	batchUpdateHandler := handler.NewBatchUpdateHandler(storage, requestsParser)
 
 	router := chi.NewRouter()
-	router.Use(middleware.LoggingHTTPHandler)
+	if config.EnableLogger {
+		router.Use(middleware.LoggingHTTPHandler)
+	}
 
 	if config.SingnatureKey != "" {
 		middleware.InitSignHandlers(config.SingnatureKey)
