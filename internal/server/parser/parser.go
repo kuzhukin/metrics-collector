@@ -1,3 +1,5 @@
+// module declares interfaces for parsing single requests - RequestParser
+// and interface for parsing batch requests - BatchRequestParser
 package parser
 
 import (

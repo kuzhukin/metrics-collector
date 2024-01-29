@@ -20,6 +20,7 @@ const EmptyHTML = `
 </html>
 `
 
+// decoding a list of metric to HTML string
 func DecodeMetricsList(metrics []*metric.Metric) string {
 	listHTML := ""
 	listHTML += "\t<ul>\n"

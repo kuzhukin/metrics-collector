@@ -2,6 +2,7 @@ package metric
 
 import "encoding/json"
 
+// model of a batch of metrics
 type MetricBatch struct {
 	metrics []*Metric
 }

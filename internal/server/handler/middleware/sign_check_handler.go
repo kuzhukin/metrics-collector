@@ -22,6 +22,7 @@ func InitSignHandlers(key string) {
 	secretKey = []byte(key)
 }
 
+// Middleware for checking request signature
 func SignCheckHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		expectedHash, err := hex.DecodeString(r.Header.Get("HashSHA256"))

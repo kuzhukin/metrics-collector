@@ -11,6 +11,8 @@ import (
 
 var _ http.Handler = &GetListHandler{}
 
+// HTTP handler for getting all metrics in HTML format
+// GET /
 type GetListHandler struct {
 	storage storage.Storage
 }

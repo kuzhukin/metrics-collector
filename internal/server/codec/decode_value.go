@@ -13,6 +13,7 @@ var valueDecoders = map[metric.Kind]dencodeFunc{
 	metric.Counter: dencodeCounter,
 }
 
+// decoding numerical metric's value to string
 func DecodeValue(m *metric.Metric) string {
 	return valueDecoders[m.Type](m)
 }

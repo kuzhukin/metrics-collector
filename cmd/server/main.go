@@ -18,17 +18,20 @@ func main() {
 
 func run() error {
 	defer func() {
+		// flush logs
 		_ = zlog.Logger.Sync()
 	}()
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGTERM, syscall.SIGINT)
 
+	// starting new metrics HTTP server
 	srvr, err := server.StartNew()
 	if err != nil {
 		return fmt.Errorf("server start err=%w", err)
 	}
 
+	// waits interrupting or stop of the server
 	select {
 	case sig := <-sigs:
 		zlog.Logger.Infof("Stop server by signal=%v\n", sig)

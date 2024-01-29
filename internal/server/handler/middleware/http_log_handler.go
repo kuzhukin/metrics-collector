@@ -7,6 +7,19 @@ import (
 	"github.com/kuzhukin/metrics-collector/internal/zlog"
 )
 
+// Middleware for logging requests
+func LoggingHTTPHandler(h http.Handler) http.Handler {
+	loggingHandler := func(w http.ResponseWriter, r *http.Request) {
+		lw := newLoggingResponseWriter(w)
+		duration := lw.doRequestWithTimer(h, r)
+
+		zlog.Logger.Infof("uri=%v, method=%v, status=%v, size=%v, duration=%v",
+			r.RequestURI, r.Method, lw.status, lw.size, duration)
+	}
+
+	return http.HandlerFunc(loggingHandler)
+}
+
 var _ http.ResponseWriter = &loggingResponseWriter{}
 
 type loggingResponseWriter struct {
@@ -38,16 +51,4 @@ func (l *loggingResponseWriter) doRequestWithTimer(h http.Handler, r *http.Reque
 	h.ServeHTTP(l, r)
 
 	return time.Since(start)
-}
-
-func LoggingHTTPHandler(h http.Handler) http.Handler {
-	loggingHandler := func(w http.ResponseWriter, r *http.Request) {
-		lw := newLoggingResponseWriter(w)
-		duration := lw.doRequestWithTimer(h, r)
-
-		zlog.Logger.Infof("uri=%v, method=%v, status=%v, size=%v, duration=%v",
-			r.RequestURI, r.Method, lw.status, lw.size, duration)
-	}
-
-	return http.HandlerFunc(loggingHandler)
 }

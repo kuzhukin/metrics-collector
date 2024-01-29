@@ -25,6 +25,7 @@ func run() error {
 
 	metricsAgent := agent.StartNew(config)
 
+	// waits interrupting of the agent
 	sig := <-sigs
 
 	zlog.Logger.Infof("Stop metrics agent by signal=%v\n", sig)

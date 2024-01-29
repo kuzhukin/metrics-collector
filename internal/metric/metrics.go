@@ -14,6 +14,7 @@ const (
 
 var ErrUnknownMetricType error = errors.New("unknown metric type")
 
+// a model of single metric
 type Metric struct {
 	ID    string   `json:"id"`
 	Type  Kind     `json:"type"`

@@ -1,3 +1,4 @@
+// Module implements HTTP server for collecting metrics
 package server
 
 import (
@@ -19,10 +20,13 @@ import (
 )
 
 type MetricServer struct {
+	// HTTP server and router
 	srvr http.Server
+	// channel for waiting of server shutdown
 	wait chan struct{}
 }
 
+// Create and start HTTP server
 func StartNew() (*MetricServer, error) {
 	config, err := config.MakeConfig()
 	if err != nil {
@@ -110,11 +114,13 @@ func (s *MetricServer) startHTTPServer() {
 	}()
 }
 
+// Stops server
 func (s *MetricServer) Stop() error {
 	zlog.Logger.Infof("Server stopped")
 	return s.srvr.Shutdown(context.Background())
 }
 
+// Waiting for server shutdown
 func (s *MetricServer) Wait() <-chan struct{} {
 	return s.wait
 }
