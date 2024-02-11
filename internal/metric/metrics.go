@@ -14,12 +14,12 @@ const (
 
 var ErrUnknownMetricType error = errors.New("unknown metric type")
 
-// a model of single metric
+// Metric - is a model of single metric
 type Metric struct {
 	ID    string   `json:"id"`
-	Type  Kind     `json:"type"`
 	Delta *int64   `json:"delta,omitempty"`
 	Value *float64 `json:"value,omitempty"`
+	Type  Kind     `json:"type"`
 }
 
 func New(id string, kind Kind, value interface{}) (*Metric, error) {

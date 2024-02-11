@@ -13,14 +13,8 @@ import (
 	"github.com/shirou/gopsutil/v3/mem"
 )
 
-// metrics agent controoler - collects metrics from go-runtime and sends them to server
+// Controller - collects metrics from go-runtime and sends them to server
 type Controller struct {
-	wg sync.WaitGroup
-	// interval of polling metrics from system
-	polingInterval int
-	// interval of reporting metrics to server
-	reportInterval int
-
 	// metric collections
 	metricsLock    sync.Mutex
 	gaugeMetrics   map[string]float64
@@ -30,9 +24,15 @@ type Controller struct {
 	reporter reporter.Reporter
 
 	done chan struct{}
+	wg   sync.WaitGroup
+
+	// interval of polling metrics from system
+	polingInterval int
+	// interval of reporting metrics to server
+	reportInterval int
 }
 
-// returns new agent
+// New returns a new agent
 func New(reporter reporter.Reporter, pollingInterval, reportInterval int) *Controller {
 	return &Controller{
 		polingInterval: pollingInterval,
@@ -44,14 +44,14 @@ func New(reporter reporter.Reporter, pollingInterval, reportInterval int) *Contr
 	}
 }
 
-// start agent
+// Start agent
 func (c *Controller) Start() {
 	zlog.Logger.Infof("Controller started")
 	c.start()
 	zlog.Logger.Infof("Controller stopped")
 }
 
-// stops agent
+// Stop agent
 func (c *Controller) Stop() {
 	close(c.done)
 }

@@ -16,12 +16,12 @@ const (
 type Config struct {
 	// server address:port for reporting metrics
 	Hostport string `env:"ADDRESS"`
+	// key for payload signature
+	SingnatureKey string `env:"KEY"`
 	// interval of metrics reporting
 	ReportInterval int `env:"REPORT_INTERVAL"`
 	// interval of polling and collecting metrics
 	PollInterval int `env:"POLL_INTERVAL"`
-	// key for payload signature
-	SingnatureKey string `env:"KEY"`
 }
 
 func MakeConfig() (Config, error) {

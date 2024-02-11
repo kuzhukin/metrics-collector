@@ -14,30 +14,31 @@ const (
 	restoreDefault         = true
 )
 
-// HTTP server config
+// Config of HTTP server
 type Config struct {
 	// listening address:port
 	Hostport string `env:"ADDRESS"`
 	// key for signature calculation
 	SingnatureKey string `env:"KEY"`
-	// flag for enabling logger
-	EnableLogger bool `env:"ENABLE_LOGGER"`
 	// storage config
 	Storage StorageConfig
+	// flag for enabling logger
+	EnableLogger bool `env:"ENABLE_LOGGER"`
 }
 
+// StorageConfig - metrics storage config
 type StorageConfig struct {
-	// interval of updloading metrics to persistent storage
-	Interval int `env:"STORE_INTERVAL"`
 	// path to the file (for file storage)
 	FilePath string `env:"FILE_STORAGE_PATH"`
-	// enable downloading metrics from persistent storage on server start
-	Restore bool `env:"RESTORE"`
 	// dsn for database storage
 	DatabaseDSN string `env:"DATABASE_DSN"`
+	// interval of updloading metrics to persistent storage
+	Interval int `env:"STORE_INTERVAL"`
+	// enable downloading metrics from persistent storage on server start
+	Restore bool `env:"RESTORE"`
 }
 
-// reading configuration from application parameters and environment variables
+// MakeConfig - reads configuration from application parameters and environment variables
 func MakeConfig() (Config, error) {
 	config := Config{}
 

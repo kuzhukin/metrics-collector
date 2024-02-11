@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-// Middleware for compressing and decompressing request body
+// CompressingHTTPHandler - middleware for compressing and decompressing request body
 func CompressingHTTPHandler(h http.Handler) http.Handler {
 	compressingHandler := func(w http.ResponseWriter, r *http.Request) {
 		resultingWriter := w

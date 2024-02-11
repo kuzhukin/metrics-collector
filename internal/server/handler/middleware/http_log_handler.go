@@ -7,7 +7,7 @@ import (
 	"github.com/kuzhukin/metrics-collector/internal/zlog"
 )
 
-// Middleware for logging requests
+// LoggingHTTPHandler - middleware for logging requests
 func LoggingHTTPHandler(h http.Handler) http.Handler {
 	loggingHandler := func(w http.ResponseWriter, r *http.Request) {
 		lw := newLoggingResponseWriter(w)

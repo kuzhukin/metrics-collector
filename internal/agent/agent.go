@@ -11,7 +11,7 @@ type Agent struct {
 	ctrl *controller.Controller
 }
 
-// creats and starts new metrics agent
+// StartNew - creats and starts new metrics agent
 func StartNew(config config.Config) *Agent {
 	reporter := reporter.New("http://"+config.Hostport, config.SingnatureKey)
 	agent := Agent{

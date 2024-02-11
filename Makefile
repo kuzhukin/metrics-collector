@@ -69,3 +69,6 @@ server_benchmark_mem_profile:
 	
 server_mem_profile: server_benchmark_mem_profile
 	go tool pprof -http=:8282 server.test profiles/server_mem.pprof
+
+run_staticlint: build-staticlint
+	cmd/staticlint/staticlint ./...
