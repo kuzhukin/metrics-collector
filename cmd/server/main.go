@@ -31,7 +31,7 @@ func run() error {
 	printBuildInfo()
 
 	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGTERM, syscall.SIGINT)
+	signal.Notify(sigs, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
 
 	// starting new metrics HTTP server
 	srvr, err := server.StartNew()

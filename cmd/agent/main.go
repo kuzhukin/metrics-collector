@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/kuzhukin/metrics-collector/internal/agent"
 	"github.com/kuzhukin/metrics-collector/internal/agent/config"
@@ -22,6 +24,7 @@ func run() error {
 	}
 
 	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
 
 	metricsAgent, err := agent.StartNew(config)
 	if err != nil {
