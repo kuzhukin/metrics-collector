@@ -13,6 +13,9 @@ import (
 
 var _ http.Handler = &UpdateHandler{}
 
+// HTTP handler for updateting metrics
+// POST /update
+// POST /update/{kind}/{value}
 type UpdateHandler struct {
 	storage storage.Storage
 	parser  parser.RequestParser

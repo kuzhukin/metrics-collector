@@ -16,6 +16,7 @@ var valueEncoders = map[metric.Kind]encodeFunc{
 	metric.Counter: encodeCounter,
 }
 
+// Encode metric value to numerical variable
 func Encode(kind metric.Kind, value string) (*int64, *float64, error) {
 	return valueEncoders[kind](value)
 }

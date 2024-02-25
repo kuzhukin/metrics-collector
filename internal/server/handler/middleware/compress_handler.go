@@ -6,6 +6,36 @@ import (
 	"net/http"
 )
 
+// CompressingHTTPHandler - middleware for compressing and decompressing request body
+func CompressingHTTPHandler(h http.Handler) http.Handler {
+	compressingHandler := func(w http.ResponseWriter, r *http.Request) {
+		resultingWriter := w
+
+		// setting gzip response writer
+		if contains(r.Header.Values("Accept-Encoding"), "gzip") {
+			cw := newCompressResponseWriter(w)
+			resultingWriter = cw
+			defer cw.Close()
+		}
+
+		// setting ungzip body reader
+		if contains(r.Header.Values("Content-Encoding"), "gzip") {
+			cr, err := newDecompressReader(r.Body)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+
+			r.Body = cr
+			defer cr.Close()
+		}
+
+		h.ServeHTTP(resultingWriter, r)
+	}
+
+	return http.HandlerFunc(compressingHandler)
+}
+
 var _ http.ResponseWriter = &compressResponseWriter{}
 
 type compressResponseWriter struct {
@@ -66,35 +96,6 @@ func (c *decompressReader) Close() error {
 		return err
 	}
 	return c.zr.Close()
-}
-
-func CompressingHTTPHandler(h http.Handler) http.Handler {
-	compressingHandler := func(w http.ResponseWriter, r *http.Request) {
-		resultingWriter := w
-
-		// setting gzip response writer
-		if contains(r.Header.Values("Accept-Encoding"), "gzip") {
-			cw := newCompressResponseWriter(w)
-			resultingWriter = cw
-			defer cw.Close()
-		}
-
-		// setting ungzip body reader
-		if contains(r.Header.Values("Content-Encoding"), "gzip") {
-			cr, err := newDecompressReader(r.Body)
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-
-			r.Body = cr
-			defer cr.Close()
-		}
-
-		h.ServeHTTP(resultingWriter, r)
-	}
-
-	return http.HandlerFunc(compressingHandler)
 }
 
 func contains[T comparable](slice []T, el T) bool {

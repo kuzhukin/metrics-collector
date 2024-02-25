@@ -2,6 +2,7 @@ package metric
 
 import "encoding/json"
 
+// MetricBatch is a model of batch request
 type MetricBatch struct {
 	metrics []*Metric
 }

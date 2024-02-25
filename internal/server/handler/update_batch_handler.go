@@ -12,6 +12,10 @@ import (
 
 var _ http.Handler = &BatchUpdateHandler{}
 
+// BatchUpdateHandler
+// HTTP handler for updating metrics in batch mode
+// POST /updates/
+// handles metrics batch update
 type BatchUpdateHandler struct {
 	storage storage.Storage
 	parser  parser.BatchRequestParser

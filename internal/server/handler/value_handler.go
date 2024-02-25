@@ -11,6 +11,9 @@ import (
 
 var _ http.Handler = &ValueHandler{}
 
+// HTTP handler for getting metrics
+// GET /value
+// GET /value/{kind}/{name}
 type ValueHandler struct {
 	storage storage.Storage
 	parser  parser.RequestParser

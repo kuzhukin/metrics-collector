@@ -8,6 +8,7 @@ import (
 	"github.com/kuzhukin/metrics-collector/internal/server/codec"
 )
 
+// sends metric to HTTP client
 func response(w http.ResponseWriter, r *http.Request, metric *metric.Metric) error {
 	switch r.Header.Get("Content-Type") {
 	case "application/json":
@@ -17,6 +18,7 @@ func response(w http.ResponseWriter, r *http.Request, metric *metric.Metric) err
 	}
 }
 
+// send metric in JSON format
 func responseJSON(w http.ResponseWriter, r *http.Request, m *metric.Metric) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -36,6 +38,7 @@ func responseJSON(w http.ResponseWriter, r *http.Request, m *metric.Metric) erro
 	return nil
 }
 
+// send metric in text format
 func responseTextPlain(w http.ResponseWriter, r *http.Request, metric *metric.Metric) error {
 	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(http.StatusOK)

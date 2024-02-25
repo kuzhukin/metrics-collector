@@ -17,6 +17,8 @@ import (
 
 const batchUpdateEndpoint = "/updates/"
 
+// Reporter sends metrics to server
+//
 //go:generate mockery --name=Reporter --filename=reporter.go --outpkg=mockreporter --output=mockreporter
 type Reporter interface {
 	Report(gaugeMetrics map[string]float64, counterMetrics map[string]int64)
@@ -40,6 +42,7 @@ func New(host string, tokenKey string) Reporter {
 	}
 }
 
+// sending metrics to server
 func (r *reporterImpl) Report(gaugeMetrics map[string]float64, counterMetrics map[string]int64) {
 	batch := prepareUpdate(gaugeMetrics, counterMetrics)
 	if batch.Len() == 0 {

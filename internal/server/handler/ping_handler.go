@@ -6,6 +6,8 @@ import (
 	"github.com/kuzhukin/metrics-collector/internal/server/storage/dbstorage"
 )
 
+// HTTP handler for checking database connection
+// GET /ping
 type PingHandler struct {
 	db *dbstorage.DBStorage
 }

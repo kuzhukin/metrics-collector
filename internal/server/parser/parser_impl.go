@@ -93,7 +93,7 @@ func parseBatchMetricByJSONBody(r *http.Request) ([]*metric.Metric, error) {
 	}
 
 	batchMetric := metric.NewBatch()
-	if err := batchMetric.Deserialize(data); err != nil {
+	if err = batchMetric.Deserialize(data); err != nil {
 		return nil, fmt.Errorf("batch metric desirialization err=%w", err)
 	}
 
