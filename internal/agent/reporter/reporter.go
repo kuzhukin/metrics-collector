@@ -11,6 +11,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kuzhukin/metrics-collector/internal/agent/config"
+	"github.com/kuzhukin/metrics-collector/internal/crypto"
 	"github.com/kuzhukin/metrics-collector/internal/metric"
 	"github.com/kuzhukin/metrics-collector/internal/zlog"
 )
@@ -27,19 +29,31 @@ type Reporter interface {
 type reporterImpl struct {
 	updateURL string
 	tokenKey  []byte
+	encryptor *crypto.Encryptor
 }
 
-func New(host string, tokenKey string) Reporter {
+func New(config config.Config) (Reporter, error) {
 	var key []byte
 
-	if tokenKey != "" {
-		key = []byte(tokenKey)
+	if config.SingnatureKey != "" {
+		key = []byte(config.SingnatureKey)
+	}
+
+	var encryptor *crypto.Encryptor
+
+	if config.CryptoKey != "" {
+		var err error
+		encryptor, err = crypto.NewEncryptor(config.CryptoKey)
+		if err != nil {
+			return nil, fmt.Errorf("new encryptor err=%w", err)
+		}
 	}
 
 	return &reporterImpl{
-		updateURL: makeUpdateURL(host),
+		updateURL: makeUpdateURL(config.Hostport),
 		tokenKey:  key,
-	}
+		encryptor: encryptor,
+	}, nil
 }
 
 // sending metrics to server
@@ -94,6 +108,13 @@ func (r *reporterImpl) doReport(data []byte) error {
 	compressedData, err := compressData(data)
 	if err != nil {
 		return fmt.Errorf("compress data err=%w", err)
+	}
+
+	if r.encryptor != nil {
+		compressedData, err = r.encryptor.Encrypt(compressedData)
+		if err != nil {
+			return fmt.Errorf("encrypt err=%w", err)
+		}
 	}
 
 	request, err := r.makeUpdateRequest(compressedData)
@@ -165,7 +186,7 @@ func doRequest(req *http.Request) error {
 }
 
 func makeUpdateURL(host string) string {
-	return host + batchUpdateEndpoint
+	return "http://" + host + batchUpdateEndpoint
 }
 
 func compressData(data []byte) ([]byte, error) {

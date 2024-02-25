@@ -23,7 +23,10 @@ func run() error {
 
 	sigs := make(chan os.Signal, 1)
 
-	metricsAgent := agent.StartNew(config)
+	metricsAgent, err := agent.StartNew(config)
+	if err != nil {
+		return fmt.Errorf("start new agent err=%w", err)
+	}
 
 	// waits interrupting of the agent
 	sig := <-sigs

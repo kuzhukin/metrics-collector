@@ -22,6 +22,8 @@ type Config struct {
 	ReportInterval int `env:"REPORT_INTERVAL"`
 	// interval of polling and collecting metrics
 	PollInterval int `env:"POLL_INTERVAL"`
+	// key for https connection
+	CryptoKey string `env:"CRYPTO_KEY"`
 }
 
 func MakeConfig() (Config, error) {
@@ -31,6 +33,7 @@ func MakeConfig() (Config, error) {
 	flag.IntVar(&config.ReportInterval, "r", reportIntervalDefault, "Interval in seconds for sending metrics snapshot to server")
 	flag.IntVar(&config.PollInterval, "p", pollIntervalSecDefault, "Interval in seconds for polling and collecting metrics")
 	flag.StringVar(&config.SingnatureKey, "k", "", "Signature key")
+	flag.StringVar(&config.CryptoKey, "crypto-key", "", "Crypto key")
 	flag.Parse()
 
 	if err := env.Parse(&config); err != nil {

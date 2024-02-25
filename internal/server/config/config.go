@@ -24,6 +24,8 @@ type Config struct {
 	Storage StorageConfig
 	// flag for enabling logger
 	EnableLogger bool `env:"ENABLE_LOGGER"`
+	// key for https connection
+	CryptoKey string `env:"CRYPTO_KEY"`
 }
 
 // StorageConfig - metrics storage config
@@ -48,6 +50,7 @@ func MakeConfig() (Config, error) {
 	flag.BoolVar(&config.Storage.Restore, "r", restoreDefault, "Enable downloading metrics from persistent storage on the start")
 	flag.StringVar(&config.Storage.DatabaseDSN, "d", "", "Database connection string")
 	flag.StringVar(&config.SingnatureKey, "k", "", "Signature key")
+	flag.StringVar(&config.CryptoKey, "crypto-key", "", "Crypto key")
 	flag.BoolVar(&config.EnableLogger, "l", true, "Enable logger")
 
 	flag.Parse()
