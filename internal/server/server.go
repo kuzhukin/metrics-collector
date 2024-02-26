@@ -79,6 +79,15 @@ func createServer(config *config.Config) (*MetricServer, error) {
 		router.Use(middleware.LoggingHTTPHandler)
 	}
 
+	if config.CryptoKey != "" {
+		decrypter, err := middleware.NewDecryptHTTPHandler(config.CryptoKey)
+		if err != nil {
+			return nil, fmt.Errorf("new decrypt handler, err=%w", err)
+		}
+
+		router.Use(decrypter)
+	}
+
 	if config.SingnatureKey != "" {
 		middleware.InitSignHandlers(config.SingnatureKey)
 		router.Use(middleware.SignCheckHandler)

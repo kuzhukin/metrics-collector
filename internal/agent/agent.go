@@ -1,6 +1,8 @@
 package agent
 
 import (
+	"fmt"
+
 	"github.com/kuzhukin/metrics-collector/internal/agent/config"
 	"github.com/kuzhukin/metrics-collector/internal/agent/controller"
 	"github.com/kuzhukin/metrics-collector/internal/agent/reporter"
@@ -12,8 +14,12 @@ type Agent struct {
 }
 
 // StartNew - creats and starts new metrics agent
-func StartNew(config config.Config) *Agent {
-	reporter := reporter.New("http://"+config.Hostport, config.SingnatureKey)
+func StartNew(config config.Config) (*Agent, error) {
+	reporter, err := reporter.New(config)
+	if err != nil {
+		return nil, fmt.Errorf("new reporter, err=%w", err)
+	}
+
 	agent := Agent{
 		ctrl: controller.New(reporter, config.PollInterval, config.ReportInterval),
 	}
@@ -22,7 +28,7 @@ func StartNew(config config.Config) *Agent {
 
 	zlog.Logger.Infof("Metrics Agent started  config=%+v", config)
 
-	return &agent
+	return &agent, nil
 }
 
 func (a *Agent) Stop() {
