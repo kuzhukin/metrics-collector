@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/netip"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/kuzhukin/metrics-collector/internal/server/config"
@@ -75,6 +76,14 @@ func createServer(config *config.Config) (*MetricServer, error) {
 	batchUpdateHandler := handler.NewBatchUpdateHandler(storage, requestsParser)
 
 	router := chi.NewRouter()
+
+	if config.TrustedSubnet != "" {
+		trustedPrefix := netip.MustParsePrefix(config.TrustedSubnet)
+		checker := middleware.NewIPChecker(trustedPrefix)
+
+		router.Use(checker.CheckIPHandler)
+	}
+
 	if config.EnableLogger {
 		router.Use(middleware.LoggingHTTPHandler)
 	}

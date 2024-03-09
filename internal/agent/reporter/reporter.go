@@ -30,6 +30,7 @@ type reporterImpl struct {
 	updateURL string
 	tokenKey  []byte
 	encryptor *crypto.Encryptor
+	ipAddr    string
 }
 
 func New(config config.Config) (Reporter, error) {
@@ -53,6 +54,7 @@ func New(config config.Config) (Reporter, error) {
 		updateURL: makeUpdateURL(config.Hostport),
 		tokenKey:  key,
 		encryptor: encryptor,
+		ipAddr:    config.RealIP,
 	}, nil
 }
 
@@ -133,6 +135,7 @@ func (r *reporterImpl) makeUpdateRequest(data []byte) (*http.Request, error) {
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Content-Encoding", "gzip")
+	req.Header.Set("X-Real-IP", r.ipAddr)
 
 	if r.tokenKey != nil {
 		hash, err := r.hash(data)

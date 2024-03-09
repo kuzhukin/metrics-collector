@@ -24,6 +24,8 @@ type Config struct {
 	PollInterval int `env:"POLL_INTERVAL"`
 	// key for https connection
 	CryptoKey string `env:"CRYPTO_KEY"`
+	// real ip
+	RealIP string `env:"REAL_IP"`
 }
 
 func MakeConfig() (Config, error) {
