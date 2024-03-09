@@ -23,6 +23,8 @@ import (
 type MetricServer struct {
 	// HTTP server and router
 	srvr http.Server
+	// GRPC server
+	grpc *GRPCMetricServer
 	// channel for waiting of server shutdown
 	wait chan struct{}
 }
@@ -113,13 +115,25 @@ func createServer(config *config.Config) (*MetricServer, error) {
 	router.Handle(endpoint.PingEndpoint, pingHandler)
 	router.Handle(endpoint.BatchUpdateEndpointJSON, batchUpdateHandler)
 
-	return &MetricServer{
+	metricServer := &MetricServer{
 		srvr: http.Server{
 			Addr:    config.Hostport,
 			Handler: router,
 		},
 		wait: make(chan struct{}),
-	}, nil
+	}
+
+	if config.UseGRPC {
+		grpcServer, err := NewGrpcServer(storage, config)
+		if err != nil {
+			return nil, fmt.Errorf("new grpc server err %w", err)
+		}
+
+		metricServer.grpc = grpcServer
+
+	}
+
+	return metricServer, nil
 }
 
 func (s *MetricServer) startHTTPServer() {
@@ -135,6 +149,11 @@ func (s *MetricServer) startHTTPServer() {
 // Stop server
 func (s *MetricServer) Stop() error {
 	zlog.Logger.Infof("Server stopped")
+
+	if s.grpc != nil {
+		s.grpc.Stop()
+	}
+
 	return s.srvr.Shutdown(context.Background())
 }
 

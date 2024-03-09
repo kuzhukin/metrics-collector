@@ -26,6 +26,8 @@ type Config struct {
 	CryptoKey string `env:"CRYPTO_KEY"`
 	// real ip
 	RealIP string `env:"REAL_IP"`
+	// use grpc
+	UseGRPC bool `env:"USE_GRPC"`
 }
 
 func MakeConfig() (Config, error) {
@@ -36,6 +38,7 @@ func MakeConfig() (Config, error) {
 	flag.IntVar(&config.PollInterval, "p", pollIntervalSecDefault, "Interval in seconds for polling and collecting metrics")
 	flag.StringVar(&config.SingnatureKey, "k", "", "Signature key")
 	flag.StringVar(&config.CryptoKey, "crypto-key", "", "Crypto key")
+	flag.BoolVar(&config.UseGRPC, "use-grpc", false, "Use GRPC")
 	flag.Parse()
 
 	if err := env.Parse(&config); err != nil {
