@@ -31,6 +31,12 @@ type Config struct {
 	CryptoKey string `env:"CRYPTO_KEY" json:"crypto_key"`
 	// path to config file
 	ConfigFilePath string `env:"CONFIG"`
+	// trusted subnet CIDR
+	TrustedSubnet string `env:"TRUSTED_SUBNET" json:"trusted_subnet"`
+	// use grpc
+	UseGRPC bool `env:"USE_GRPC" json:"use_grpc"`
+	// grpc hostport
+	GRPCHostPort string `env:"GRPC_ADDRESS" json:"grpc_address"`
 }
 
 // StorageConfig - metrics storage config
@@ -57,6 +63,9 @@ func MakeConfig() (Config, error) {
 	flag.StringVar(&config.SingnatureKey, "k", "", "Signature key")
 	flag.StringVar(&config.CryptoKey, "crypto-key", "", "Crypto key")
 	flag.BoolVar(&config.EnableLogger, "l", true, "Enable logger")
+	flag.StringVar(&config.TrustedSubnet, "t", "", "trusted subnet CIDR")
+	flag.BoolVar(&config.UseGRPC, "g", false, "use GRPC")
+	flag.StringVar(&config.GRPCHostPort, "grpc-address", "", "grpc address")
 
 	flag.Parse()
 
@@ -108,6 +117,16 @@ func updateConfigFromFile(config Config) Config {
 
 				if config.CryptoKey == "" {
 					config.CryptoKey = jsonConfig.CryptoKey
+				}
+
+				if config.TrustedSubnet == "" {
+					config.TrustedSubnet = jsonConfig.CryptoKey
+				}
+				if !config.UseGRPC {
+					config.UseGRPC = jsonConfig.UseGRPC
+				}
+				if config.GRPCHostPort == "" {
+					config.GRPCHostPort = jsonConfig.GRPCHostPort
 				}
 			}
 		}
